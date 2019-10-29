@@ -118,7 +118,9 @@ else:
                                          )
         G_c, MAE, MSE, R2, PSNR, SSIM = test_result
         for i in range(len(G_c)):
-            imsave(os.path.join(FLAGS.save_dir, "test", "test_result_%d.png" % (i)), 0.5*G_c[i, :, :, :] + 0.5, vmin=0.0, vmax=1.0)
-            
+            if FLAGS.out_channel == 1:
+                imsave(os.path.join(FLAGS.save_dir, "test", "test_result_%d.png" % (i)), 0.5*G_c[i, :, :, 0] + 0.5, vmin=0.0, vmax=1.0)
+            else: # RGB or RGBA
+                imsave(os.path.join(FLAGS.save_dir, "test", "test_result_%d.png" % (i)), 0.5*G_c[i, :, :, :] + 0.5, vmin=0.0, vmax=1.0)
     else:
         raise NotImplementedError('pretrained session must be restored.')
