@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 @author: sio277(shoh4486@naver.com)
+tf.__version__ == '1.12.0' ~ '1.14.0'
 """
 import tensorflow as tf
 import numpy as np
@@ -9,7 +10,7 @@ from utils import *
 
 def channel_generator():
     """
-    the initial number of channels is input when class instantiation
+    The initial number of channels is input when class instantiation.
     """
     yield 64
     yield 128
@@ -17,14 +18,14 @@ def channel_generator():
     while 1:
         yield 512
         
-        
 class Pix2pix:
     """
-    pix2pix by Isola, P. et al., Image-to-image translation with conditional adversarial networks, arXiv:1611.07004
+    pix2pix by Isola, P. et al., Image-to-image translation with conditional adversarial networks, arXiv:1611.07004.
     """
     def __init__(self, sess, H_in, W_in, C_in, C_out, v_min, v_max, seed, loss_lambda=100.0, LSGAN=False, 
                  weight_decay_lambda=1e-07, truncated=False, optimizer='Adam', save_dir="./", gpu_num=2):
         """
+        Parameters
         sess: TensorFlow session
         H_in, W_in, C_in: input shape (height, width, channel)
         C_out: output channel number (H_out==H_in, W_out==W_in)
@@ -36,6 +37,7 @@ class Pix2pix:
         truncated: truncated weight distribution
         optimizer: only Adam adopted
         save_dir: saving directory for the training results
+        gpu_num: the number of gpus
         """
         self.sess = sess
         self.H = H_in
@@ -55,7 +57,6 @@ class Pix2pix:
         self._beta1 = 0.5 # beta1 in Adam optimizer
         self.save_dir = save_dir
         self.gpu_num = gpu_num
-        
         assert self.gpu_num < 3
         assert type(self.H) == int and type(self.W) == int, 'H and W should be integers.'
         self._H_list, self._W_list, self._C_list, self._s_list = [self.H], [self.W], [self.C_in], [] # _s_list: stride list
@@ -78,10 +79,12 @@ class Pix2pix:
         np.random.seed(self.seed)
         tf.set_random_seed(self.seed)
         self.build_model()
-        
 
     def generator(self, c, batch_size, is_training, with_h=False):
         """
+        Encoder-Decoder generator
+        
+        Parameters
         c: condition ([N, H, W, C_in])
         """
         h = []
@@ -115,17 +118,17 @@ class Pix2pix:
                                   [batch_size, self._H_list[-2-j], self._W_list[-2-j], self.C_out], 'g_h%d' % len(h), 
                                   sdy=self._s_list[-1-j], sdx=self._s_list[-1-j], 
                                   weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated))
-            
-        h.append(tf.tanh(h[-1]))
         
+        h.append(tf.tanh(h[-1]))
         return h[-1] if not with_h else h
-
 
     def discriminator(self, image, c, is_training, with_h=False):
         """
-        image: generator 생성 결과 OR ground truth ([N, H, W, C_out])
+        Encoder discriminator (patchGAN discriminator: C64-C128-C256-C512-C1)
+        
+        Parameters
+        image: generation result OR ground truth ([N, H, W, C_out])
         c: condition ([N, H, W, C_in])
-        patchGAN discriminator: C64-C128-C256-C512-C1
         """
         h = []
         h.append(conv2d(tf.concat([image, c], axis=-1), 64, 'd_h%d' % len(h), sdy=2, sdx=2, 
@@ -149,9 +152,7 @@ class Pix2pix:
                         weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated)) # no BN
 
         h.append(tf.nn.sigmoid(h[-1]))
-        
         return h[-2], h[-1] if not with_h else h
-
         
     def build_model(self):
         with tf.name_scope('placeholders'):
@@ -232,9 +233,8 @@ class Pix2pix:
                 with tf.control_dependencies(update_ops):
                     self.D_train_step = tf.train.AdamOptimizer(learning_rate=self.lr, beta1=self._beta1).minimize(0.5*D_loss, var_list=D_var_list)
                     self.G_train_step = tf.train.AdamOptimizer(learning_rate=self.lr, beta1=self._beta1).minimize(G_loss, var_list=G_var_list)
-
             else:
-                raise NotImplementedError('Other optimizers had not been considered.')
+                raise NotImplementedError('Other optimizers have not been considered.')
                 
         with tf.name_scope('performance_measures'):
             with tf.name_scope('error'):
@@ -246,8 +246,10 @@ class Pix2pix:
                 SST = tf.reduce_sum(tf.square(self.x - tf.reshape(tf.reduce_mean(self.x, axis=[1, 2, 3]), [-1, 1, 1, 1])), 
                                     axis=[1, 2, 3], name='SST') # Total Sum of Squares, [N, 1]
                 self.R2 = tf.reduce_mean(1.0 - SSE/SST, name='R2')
-                self.PSNR = tf.reduce_mean(tf.image.psnr(0.5*self.G_c + 0.5, 0.5*self.x + 0.5, max_val=1.0), name='PSNR') # returns [batch_size, 1] -> avg / -1~1 to 0~1
-                self.SSIM = tf.reduce_mean(tf.image.ssim(0.5*self.G_c + 0.5, 0.5*self.x + 0.5, max_val=1.0), name='SSIM') # returns [batch_size, 1] -> avg / -1~1 to 0~1
+                self.PSNR = tf.reduce_mean(tf.image.psnr(0.5*self.G_c + 0.5, 0.5*self.x + 0.5, max_val=1.0), name='PSNR') 
+                # returns [batch_size, 1] -> avg / -1~1 to 0~1
+                self.SSIM = tf.reduce_mean(tf.image.ssim(0.5*self.G_c + 0.5, 0.5*self.x + 0.5, max_val=1.0), name='SSIM') 
+                # returns [batch_size, 1] -> avg / -1~1 to 0~1
     
         gamma_var = [var for var in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES) if 'gamma' in var.name]
         for gv in range(len(gamma_var)):
@@ -257,7 +259,8 @@ class Pix2pix:
         for bv in range(len(beta_var)):
             tf.summary.histogram('beta_var_%d' % bv, beta_var[bv])
         
-        moving_var = [var for var in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES) if 'moving_' in var.name] # batch_size > 1
+        moving_var = [var for var in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES) if 'moving_' in var.name] 
+        # To consider this, batch_size should be larger than 1 due to BN cancellation in a bottleneck.
         for mv in range(len(moving_var)):
             tf.summary.histogram('moving_var_%d' % mv, moving_var[mv])
             
@@ -268,10 +271,10 @@ class Pix2pix:
         bias_var = [var for var in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES) if 'bias' in var.name]
         for biv in range(len(bias_var)):
             tf.summary.histogram('bias_var_%d' % biv, bias_var[biv])
-
             
-    def train(self, inputs, gts, index_file, config):    
+    def train(self, inputs, gts, config):    
         """
+        Parameters
         inputs: a tuple consisting of (inputs_train, inputs_train_, inputs_valid) ([N, H, W, C_in]) (-1~1)
         gts: a tuple consisting of (gts_train, gts_train_, gts_valid) ([N, H, W, C_out]) (-1~1)
         config: configuration defined by tf.app.flags
@@ -336,7 +339,6 @@ class Pix2pix:
                 self.SSIM_valid_vals.append(SSIM_valid_val)
                 
                 print('Epoch: %d, RMSE_train: %f, RMSE_valid: %f, R2_train: %f, R2_valid: %f' % (epoch, self.MSE_train_vals[-1]**0.5, self.MSE_valid_vals[-1]**0.5, self.R2_train_vals[-1], self.R2_valid_vals[-1]))
-
                     
     def evaluation(self, inputs, gts=None, with_h=False):
         """

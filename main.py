@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 @author: sio277(shoh4486@naver.com)
+tf.__version__ == '1.12.0' ~ '1.14.0'
 """
 import tensorflow as tf
 import numpy as np
@@ -10,17 +11,16 @@ import os
 import pprint
 from model import Pix2pix
 from utils import *
-from data.data_preprocessing import inputs_train, inputs_train_, inputs_valid, inputs_test, gts_train, gts_train_, gts_valid, gts_test, v_min, v_max
 
-trial_num = 24
+trial_num = 1
 
 flags = tf.app.flags
 flags.DEFINE_integer('height', 363, 'image height')
 flags.DEFINE_integer('width', 298, 'image width')
 flags.DEFINE_integer('in_channel', 3, 'input channel dimension')
 flags.DEFINE_integer('out_channel', 1, 'output channel dimension')
-flags.DEFINE_float('v_min', v_min, 'minimum pixel value of the training data')
-flags.DEFINE_float('v_max', v_max, 'maximum pixel value of the training data')
+flags.DEFINE_float('v_min', -10, 'minimum pixel value of raw data')
+flags.DEFINE_float('v_max', 2000, 'maximum pixel value of raw data')
 flags.DEFINE_integer('seed', 191015, 'seed number')
 flags.DEFINE_float('loss_lambda', 100.0, 'L1 loss lambda')
 flags.DEFINE_bool('LSGAN', False, 'applying LSGAN loss')
@@ -37,15 +37,15 @@ flags.DEFINE_integer('end_epoch', 200, 'end epoch')
 flags.DEFINE_bool('lr_decay', False, 'learning rate decay')
 flags.DEFINE_boolean('train', False, 'True for training, False for evaluation')
 flags.DEFINE_boolean('restore', True, 'True for retoring, False for raw training')
-flags.DEFINE_string('pre_train_dir', os.path.join("./trials", "trial_{0}".format(23), "sess-{0}".format(1499)), 'when retraining, directory to restore')
-flags.DEFINE_integer('restart_epoch', 1500, 'start epoch') 
-flags.DEFINE_integer('reend_epoch', 2000, 'end epoch')
+flags.DEFINE_string('pre_train_dir', os.path.join("./trials", "trial_{0}".format(23), "sess-{0}".format(1499)), 'when retraining, directory to restore. if none, just leave it.')
+flags.DEFINE_integer('restart_epoch', 1500, 'restart epoch') 
+flags.DEFINE_integer('re_end_epoch', 2000, 're-end epoch')
+flags.DEFINE_boolean('eval_with_test_acc', True, 'True for test accuracies evaluation')
 FLAGS = flags.FLAGS
 
 pprint.pprint(flags.FLAGS.__flags)
 
 create_directory(FLAGS.save_dir)
-create_directory(os.path.join(FLAGS.save_dir, "sess"))
 create_directory(os.path.join(FLAGS.save_dir, "test"))
 
 run_config = tf.ConfigProto()
@@ -73,11 +73,16 @@ pix2pix = Pix2pix(
 global_variables_list()
 
 if FLAGS.train:
+    from data.data_preprocessing import inputs_train, inputs_train_, inputs_valid, gts_train, gts_train_, gts_valid
+    data_col = [inputs_train, inputs_train_, inputs_valid, gts_train, gts_train_, gts_valid]
+    for i in data_col:
+        pixel_checker(i)
+    
     if FLAGS.restore:
         saver = tf.train.Saver()
         saver.restore(sess, FLAGS.pre_train_dir)
         FLAGS.start_epoch = FLAGS.restart_epoch
-        FLAGS.end_epoch = FLAGS.reend_epoch
+        FLAGS.end_epoch = FLAGS.re_end_epoch
         pix2pix.train(
                       inputs=(inputs_train, inputs_train_, inputs_valid),
                       gts=(gts_train, gts_train_, gts_valid),
@@ -107,20 +112,43 @@ if FLAGS.train:
     np.savetxt(os.path.join(FLAGS.save_dir, "PSNR_valid.txt"), pix2pix.PSNR_valid_vals)
     np.savetxt(os.path.join(FLAGS.save_dir, "SSIM_valid.txt"), pix2pix.SSIM_valid_vals)
     
-else:
+else: # testing mode
+    try:
+        from data.test_data_preprocessing import inputs_test, gts_test
+        test_data_col = [inputs_test, gts_test]
+        for i in test_data_col:
+            pixel_checker(i)
+            
+    except ImportError: # when gts_test is not given
+        from data.test_data_preprocessing import inputs_test
+        pixel_checker(inputs_test)
+        
     if FLAGS.restore:
         saver = tf.train.Saver()
         saver.restore(sess, FLAGS.pre_train_dir)
-        test_result = pix2pix.evaluation(
-                                         inputs=inputs_test,
-                                         gts=gts_test,
-                                         with_h=False
-                                         )
-        G_c, MAE, MSE, R2, PSNR, SSIM = test_result
-        for i in range(len(G_c)):
+        if FLAGS.eval_with_test_acc:
+            test_results = pix2pix.evaluation(
+                                              inputs=inputs_test,
+                                              gts=gts_test,
+                                              with_h=False
+                                              )
+            G_c_test, MAE_test, MSE_test, R2_test, PSNR_test, SSIM_test = test_results
+            np.savetxt(os.path.join(FLAGS.save_dir, "test", "MAE_test.txt"), MAE_test)
+            np.savetxt(os.path.join(FLAGS.save_dir, "test", "MSE_test.txt"), MSE_test)
+            np.savetxt(os.path.join(FLAGS.save_dir, "test", "R2_test.txt"), R2_test)
+            np.savetxt(os.path.join(FLAGS.save_dir, "test", "PSNR_test.txt"), PSNR_test)
+            np.savetxt(os.path.join(FLAGS.save_dir, "test", "SSIM_test.txt"), SSIM_test)
+            
+        else:
+            G_c_test = pix2pix.evaluation(
+                                          inputs=inputs_test,
+                                          gts=None,
+                                          with_h=False
+                                          )
+        for i in range(len(G_c_test)):
             if FLAGS.out_channel == 1:
-                imsave(os.path.join(FLAGS.save_dir, "test", "test_result_%d.png" % (i)), 0.5*G_c[i, :, :, 0] + 0.5, vmin=0.0, vmax=1.0)
+                imsave(os.path.join(FLAGS.save_dir, "test", "test_result%d.png" % (i)), 0.5*G_c_test[i, :, :, 0] + 0.5, vmin=0.0, vmax=1.0, cmap=plt.cm.rainbow)
             else: # RGB or RGBA
-                imsave(os.path.join(FLAGS.save_dir, "test", "test_result_%d.png" % (i)), 0.5*G_c[i, :, :, :] + 0.5, vmin=0.0, vmax=1.0)
+                imsave(os.path.join(FLAGS.save_dir, "test", "test_result%d.png" % (i)), 0.5*G_c_test[i, :, :, :] + 0.5, vmin=0.0, vmax=1.0, cmap=plt.cm.rainbow)
     else:
         raise NotImplementedError('pretrained session must be restored.')

@@ -1,28 +1,31 @@
 # -*- coding: utf-8 -*-
 """
 @author: sio277(shoh4486@naver.com)
+tf.__version__ == '1.12.0' ~ '1.14.0'
 """
 import tensorflow as tf
 
 def l_relu(inputs, alpha=0.2, name='leaky_relu'):
-    """Leaky ReLU"""
+    """
+    Leaky ReLU
+    (Maas, A. L. et al., Rectifier nonlinearities imporve neural network acoustic models, Proc. icml. Vol.30. No.1. 2013)
+    """
     return tf.maximum(inputs, alpha*inputs) # == tf.nn.leaky_relu(inputs, alpha)
-
 
 def BN(inputs, is_training, name='batch_norm', momentum=0.99, center=True): 
     """
-    Batch normalization  
+    Batch normalization
+    (Ioffe, S. and Szegedy, C., Batch normalization: Accelerating deep network training by reducing internal covariate shift,
+     arXiv preprint arXiv:1502.03167, 2015)
     
     Parameters
     inputs: [N, H, W, C]
     is_training: training mode check
-    center: beta
     
-    - ADD tf.control_dependencies to the optimizer
+    - Add tf.control_dependencies to the optimizer.
     """
     with tf.variable_scope(name):
         return tf.layers.batch_normalization(inputs, momentum=momentum, epsilon=1e-5, center=center, training=is_training) 
-    
     
 def conv2d(inputs, FN, name='conv2d', FH=4, FW=4, sdy=1, sdx=1, padding='SAME', bias=True,
            weight_decay_lambda=None, truncated=False, stddev=0.02):
@@ -33,8 +36,8 @@ def conv2d(inputs, FN, name='conv2d', FH=4, FW=4, sdy=1, sdx=1, padding='SAME', 
     inputs: [N, H, W, C]
     FN: filter number
     
-    filters: [FH, FW, C, FN]
-    outputs: [N, OH, OW, FN]
+    - filters: [FH, FW, C, FN]
+    - outputs: [N, OH, OW, FN]
     """
     with tf.variable_scope(name):
         C = inputs.get_shape()[-1]
@@ -54,7 +57,6 @@ def conv2d(inputs, FN, name='conv2d', FH=4, FW=4, sdy=1, sdx=1, padding='SAME', 
             conv_ = tf.nn.bias_add(conv, b)
             return conv_
         
-        
 def t_conv2d(inputs, output_shape, name='t_conv2d', FH=4, FW=4, sdy=2, sdx=2, bias=True, 
              weight_decay_lambda=None, truncated=False, stddev=0.02):
     """
@@ -64,7 +66,7 @@ def t_conv2d(inputs, output_shape, name='t_conv2d', FH=4, FW=4, sdy=2, sdx=2, bi
     inputs: [N, H, W, C]
     output_shape: [N, OH, OW, FN]
     
-    filters: [FH, FW, FN, C] != filters.shape in conv2d 
+    - filters: [FH, FW, FN, C] != filters.shape in conv2d 
     """
     with tf.variable_scope(name):
         FN = output_shape[-1]
