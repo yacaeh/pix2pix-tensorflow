@@ -10,7 +10,7 @@ from utils import *
 
 def channel_generator():
     """
-    The initial number of channels is input when class instantiation.
+    The initial number of channels (C_in) is automatically input when class instantiation.
     """
     yield 64
     yield 128
