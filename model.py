@@ -29,7 +29,8 @@ class Pix2pix:
         sess: TensorFlow session
         H_in, W_in, C_in: input shape (height, width, channel)
         C_out: output channel number (H_out==H_in, W_out==W_in)
-        v_min, v_max: min and max of training data (for data de-normalization: from -1~1 to v_min~v_max)
+        v_min, v_max: min and max of training data 
+                      (for data de-normalization: from x': -1~1 to x: v_min~v_max, by applying alpha*x' + beta)
         seed: random seed for random modules in numpy and TensorFlow
         loss_lambda: L1 loss lambda (pix2pix: 100.0)
         LSGAN: applying LSGAN loss
@@ -44,10 +45,8 @@ class Pix2pix:
         self.W = W_in
         self.C_in = C_in
         self.C_out = C_out
-        self.v_min = v_min
-        self.v_max = v_max
-        self._alpha = 0.5*(self.v_max - self.v_min)
-        self._beta = 0.5*(self.v_max + self.v_min)
+        self._alpha = 0.5*(v_max - v_min)
+        self._beta = 0.5*(v_max + v_min)
         self.seed = seed
         self.loss_lambda = loss_lambda
         self.LSGAN = LSGAN
