@@ -7,4 +7,4 @@
 ---
 ## In this code:
 - Latent variable z was removed for deterministic mapping
-- tf.__version__ == '1.12.0' ~ '1.14.0'
+- tf.\_\_version\_\_ == '1.12.0' ~ '1.14.0'
