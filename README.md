@@ -1,5 +1,5 @@
 # pix2pix-TensorFlow
-- original paper: Isola, P. et al., Image-to-image translation with conditional adversarial networks, arXiv:1611.07004.
+- official paper: Isola, P. et al., Image-to-image translation with conditional adversarial networks, arXiv:1611.07004.
 - paper link: http://openaccess.thecvf.com/content_cvpr_2017/html/Isola_Image-To-Image_Translation_With_CVPR_2017_paper.html
 - A powerful deep learning architecture for image-to-image translation
 - CNN-based encoder-decoder with a conditional GAN architecture
