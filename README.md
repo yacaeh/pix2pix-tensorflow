@@ -4,7 +4,8 @@
 - A powerful deep learning architecture for image-to-image translation
 - CNN-based encoder-decoder with a conditional GAN architecture
 - Image size < 400 x 400 recommended (Higher resolution image -> Use pix2pixHD)
----
-## In this code:
+## In this code
 - Latent variable z was removed for deterministic mapping
 - tf.\_\_version\_\_ == '1.12.0' ~ '1.14.0'
+## Author
+Sehyeok Oh  @sio277
