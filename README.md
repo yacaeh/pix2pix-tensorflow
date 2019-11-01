@@ -8,6 +8,6 @@
 - Latent variable z was removed for deterministic mapping (i.e. input image and ground truth image are 1:1 matched)
 - tf.\_\_version\_\_ == '1.12.0' ~ '1.14.0'
 - Only CPU: Set FLAGS.gpu_num to 0 in main.py.
-- GPU > 2: mannually allocate them.
+- The number of GPU > 2: mannually allocate them.
 ## Author
 Sehyeok Oh  @shoh4486
