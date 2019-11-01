@@ -57,7 +57,7 @@ class Pix2pix:
         self._beta1 = 0.5 # beta1 in Adam optimizer
         self.save_dir = save_dir
         self.gpu_num = gpu_num
-        assert self.gpu_num < 3
+        assert self.gpu_num < 3, 'If the number of gpus is larger than 2, allocate them mannually.'
         assert type(self.H) == int and type(self.W) == int, 'H and W should be integers.'
         self._H_list, self._W_list, self._C_list, self._s_list = [self.H], [self.W], [self.C_in], [] # _s_list: stride list
         C_ref = channel_generator()
