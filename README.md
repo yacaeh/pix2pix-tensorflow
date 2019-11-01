@@ -8,4 +8,4 @@
 - Latent variable z was removed for deterministic mapping (i.e. input image and ground truth image are 1:1 matched)
 - tf.\_\_version\_\_ == '1.12.0' ~ '1.14.0'
 ## Author
-Sehyeok Oh  @sio277
+Sehyeok Oh  @shoh4486
