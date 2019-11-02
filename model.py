@@ -340,7 +340,7 @@ class Pix2pix:
         inputs: conditions ([N, H, W, C_in]) (-1~1)       
         gts: (optional) ground truths ([N, H, W, C_out]) (-1~1)
         """
-        if np.sum(gts == None):
+        if np.sum(gts is None):
             if not with_h:
                 return self.sess.run(self.G_c, feed_dict={self.c: inputs, self.batch_size: len(inputs), self.is_training: True})
             else:
