@@ -14,4 +14,8 @@
 ## Author
 Sehyeok Oh  @shoh4486
 ## Author's application
+- Deep learning model for predicting hardness distribution in laser heat treatment of AISI H13 tool steel, Applied Thermal Engineering 153, 583-595 (2019).
 - Prediction of hardness distribution in laser transformation hardening (R2 accuracy: 94.4%).
+- Inputs: FEM-simulated cross-sectional temperature profile, Outputs: Cross-sectional hardness distribution
+- Result
+![Fig  13](https://user-images.githubusercontent.com/39050306/68071460-edb1a780-fdbd-11e9-9e79-f83ab867e11f.png)
