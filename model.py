@@ -96,7 +96,6 @@ class Pix2pix:
                 h.append(BN(conv2d(l_relu(h[-1]), self._C_list[i+1], 'g_h%d' % len(h), sdy=self._s_list[i], sdx=self._s_list[i],
                                    weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
                             is_training, 'g_bn%d' % len(h)))
-        
         # DECODER
         for j in range(len(self._H_list)-1):
             if j == 0:

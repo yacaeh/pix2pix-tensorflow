@@ -5,8 +5,6 @@ tf.__version__ == '1.12.0' ~ '1.14.0'
 """
 import tensorflow as tf
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.image import imsave
 import os
 import pprint
 from model import Pix2pix
@@ -147,10 +145,10 @@ else: # testing mode
                                           gts=None,
                                           with_h=False
                                           )
+        # denormalize to the original range (from -1~1 to v_min~v_max)
+        G_c_test = pix2pix._alpha*G_c_test + pix2pix._beta      
         for i in range(len(G_c_test)):
-            if FLAGS.out_channel == 1:
-                imsave(os.path.join(FLAGS.save_dir, "test", "test_result%d.png" % (i)), 0.5*G_c_test[i, :, :, 0] + 0.5, vmin=0.0, vmax=1.0, cmap=plt.cm.rainbow)
-            else: # RGB or RGBA
-                imsave(os.path.join(FLAGS.save_dir, "test", "test_result%d.png" % (i)), 0.5*G_c_test[i, :, :, :] + 0.5, vmin=0.0, vmax=1.0, cmap=plt.cm.rainbow)
+            for c in range(FLAGS.out_channel):
+                np.savetxt(os.path.join(FLAGS.save_dir, "test", "test_result%d_channel%d.txt" % (i, c)), G_c_test[i, :, :, c])
     else:
         raise NotImplementedError('pretrained session must be restored.')
