@@ -9,5 +9,7 @@
 - tf.\_\_version\_\_ == '1.12.0' ~ '1.14.0'
 - Only CPU: set FLAGS.gpu_num to 0 in main.py.
 - The number of GPUs > 2: mannually allocate them.
+## Author's application
+- Laser hardening prediction
 ## Author
 Sehyeok Oh  @shoh4486
