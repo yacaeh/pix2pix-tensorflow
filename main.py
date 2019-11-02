@@ -118,12 +118,11 @@ if FLAGS.train:
 else: # testing mode
     try:
         from data.test_data_preprocessing import inputs_test, gts_test
-        test_data_col = [inputs_test, gts_test]
-        for i in test_data_col:
-            pixel_checker(i)
-            
     except ImportError: # when gts_test is not given
         from data.test_data_preprocessing import inputs_test
+    else:
+        pixel_checker(gts_test)
+    finally:
         pixel_checker(inputs_test)
         
     if FLAGS.restore:
