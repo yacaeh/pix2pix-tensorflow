@@ -334,8 +334,11 @@ class Pix2pix:
                     
     def evaluation(self, inputs, gts=None, with_h=False):
         """
+        Test set evaluation after the training and the validation
+        
+        Parameters
         inputs: conditions ([N, H, W, C_in]) (-1~1)       
-        gts: ground truths ([N, H, W, C_out]) (-1~1)
+        gts: (optional) ground truths ([N, H, W, C_out]) (-1~1)
         """
         if np.sum(gts == None):
             if not with_h:

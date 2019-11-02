@@ -18,4 +18,4 @@ def global_variables_list():
 
 def pixel_checker(image):
     if (np.min(image) < -1) or (np.max(image) > 1):
-        raise ValueError('Pixel value should be in -1~1 range.')
+        raise ValueError('Pixel values should be in -1~1 range.')
