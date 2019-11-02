@@ -12,4 +12,4 @@
 ## Author
 Sehyeok Oh  @shoh4486
 ## Author's application
-- Laser materials hardening prediction
+- Prediction of hardness distribution in laser transformation hardening (R2 accuracy: 94.4%).
