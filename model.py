@@ -195,14 +195,7 @@ class Pix2pix:
                 L1_loss = tf.reduce_mean(tf.abs(self.G_c - self.x))
                 G_loss = tf.math.add(tf.reduce_mean(0.5*tf.square(self.D_G_c_logits - tf.ones_like(self.D_G_c_logits))), 
                                      self.loss_lambda*L1_loss, name='G_loss')
-                
-                if self.weight_decay_lambda:
-                    weight_decay_vars = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-                    D_weight_decay_list = [var for var in weight_decay_vars if 'd_' in var.name]
-                    G_weight_decay_list = [var for var in weight_decay_vars if 'g_' in var.name]
-                    D_loss += tf.add_n(D_weight_decay_list)
-                    G_loss += tf.add_n(G_weight_decay_list)
-                    
+            
             else:
                 D_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=self.D_x_logits, 
                                                                                      labels=tf.ones_like(self.D_x_logits)))
@@ -215,12 +208,12 @@ class Pix2pix:
                                                                                             labels=tf.ones_like(self.D_G_c_logits))),
                                      self.loss_lambda*L1_loss, name='G_loss')
                 
-                if self.weight_decay_lambda:
-                    weight_decay_vars = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-                    D_weight_decay_list = [var for var in weight_decay_vars if 'd_' in var.name]
-                    G_weight_decay_list = [var for var in weight_decay_vars if 'g_' in var.name]
-                    D_loss += tf.add_n(D_weight_decay_list)
-                    G_loss += tf.add_n(G_weight_decay_list)
+            if self.weight_decay_lambda:
+                weight_decay_vars = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+                D_weight_decay_list = [var for var in weight_decay_vars if 'd_' in var.name]
+                G_weight_decay_list = [var for var in weight_decay_vars if 'g_' in var.name]
+                D_loss += tf.add_n(D_weight_decay_list)
+                G_loss += tf.add_n(G_weight_decay_list)
 
         with tf.name_scope('optimizer'):
             if self.optimizer == 'Adam':
