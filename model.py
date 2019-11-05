@@ -74,7 +74,11 @@ class Pix2pix:
             self._C_list.append(next(C_ref))
             self._s_list.append(2)
             if self._H_list[-1] == 1 or self._W_list[-1] == 1: break
-  
+               
+        self.bn = BN()
+        self.conv2d = Conv2D(4, 4, self.weight_decay_lambda, self.truncated, 0.02, True)
+        self.tconv2d = TConv2D(4, 4, self.weight_decay_lambda, self.truncated, 0.02, True)
+        
         np.random.seed(self.seed)
         tf.set_random_seed(self.seed)
         self.build_model()
@@ -87,35 +91,27 @@ class Pix2pix:
         c: condition ([N, H, W, C_in])
         """
         h = []
+        H, W, C, s = self._H_list, self._W_list, self._C_list, self._s_list
         # ENCODER
-        for i in range(len(self._H_list)-1):
+        for i in range(len(H)-1):
             if i == 0: # first layer, no BN
-                h.append(conv2d(c, self._C_list[i+1], 'g_h%d' % len(h), sdy=self._s_list[i], sdx=self._s_list[i], 
-                                weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated))
+                h.append(self.conv2d(c, C[i+1], s[i], 'g_h%d' % len(h)))
             else:
-                h.append(BN(conv2d(l_relu(h[-1]), self._C_list[i+1], 'g_h%d' % len(h), sdy=self._s_list[i], sdx=self._s_list[i],
-                                   weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                            is_training, 'g_bn%d' % len(h)))
+                h.append(self.bn(self.conv2d(l_relu(h[-1]), C[i+1], s[i], 'g_h%d' % len(h)), is_training, 'g_bn%d' % len(h)))
         # DECODER
-        for j in range(len(self._H_list)-1):
+        for j in range(len(H)-1):
             if j == 0:
-                h.append(BN(t_conv2d(l_relu(h[-1]), [batch_size, self._H_list[-2-j], self._W_list[-2-j], self._C_list[-2-j]], 
-                                     'g_h%d' % len(h), sdy=self._s_list[-1-j], sdx=self._s_list[-1-j], 
-                                     weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                            is_training, 'g_bn%d' % len(h)))
+                h.append(self.bn(self.tconv2d(l_relu(h[-1]), [batch_size, H[-2-j], W[-2-j], C[-2-j]], s[-1-j], 'g_h%d' % len(h)), 
+                                 is_training, 'g_bn%d' % len(h)))
             
-            elif j > 0 and j < len(self._H_list)-2:
-                h.append(BN(t_conv2d(tf.nn.relu(tf.concat([h[-1], h[-1-2*j]], axis=-1)), 
-                                     [batch_size, self._H_list[-2-j], self._W_list[-2-j], self._C_list[-2-j]], 'g_h%d' % len(h), 
-                                     sdy=self._s_list[-1-j], sdx=self._s_list[-1-j], 
-                                     weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                            is_training, 'g_bn%d' % len(h)))
+            elif j > 0 and j < len(H)-2:
+                h.append(self.bn(self.tconv2d(tf.nn.relu(tf.concat([h[-1], h[-1-2*j]], axis=-1)), 
+                                              [batch_size, H[-2-j], W[-2-j], C[-2-j]], s[-1-j], 'g_h%d' % len(h)), 
+                                 is_training, 'g_bn%d' % len(h)))
             
             else: # last layer, no BN, C=C_out
-                h.append(t_conv2d(tf.nn.relu(tf.concat([h[-1], h[-1-2*j]], axis=-1)), 
-                                  [batch_size, self._H_list[-2-j], self._W_list[-2-j], self.C_out], 'g_h%d' % len(h), 
-                                  sdy=self._s_list[-1-j], sdx=self._s_list[-1-j], 
-                                  weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated))
+                h.append(self.tconv2d(tf.nn.relu(tf.concat([h[-1], h[-1-2*j]], axis=-1)), 
+                                      [batch_size, H[-2-j], W[-2-j], self.C_out], s[-1-j], 'g_h%d' % len(h)))
         
         h.append(tf.tanh(h[-1]))
         return h[-1] if not with_h else h
@@ -129,26 +125,14 @@ class Pix2pix:
         c: condition ([N, H, W, C_in])
         """
         h = []
-        h.append(conv2d(tf.concat([image, c], axis=-1), 64, 'd_h%d' % len(h), sdy=2, sdx=2, 
-                        weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated))
-        
-        h.append(BN(conv2d(l_relu(h[-1]), 128, 'd_h%d' % len(h), sdy=2, sdx=2, 
-                           weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                    is_training, 'd_bn%d' % len(h)))
-        
-        h.append(BN(conv2d(l_relu(h[-1]), 256, 'd_h%d' % len(h), sdy=2, sdx=2, 
-                           weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                    is_training, 'd_bn%d' % len(h)))
-
-        h.append(BN(conv2d(tf.pad(l_relu(h[-1]), [[0, 0], [1, 1], [1, 1], [0, 0]], mode='CONSTANT'), 512, 'd_h%d' % len(h), 
-                           padding='VALID',
-                           weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                    is_training, 'd_bn%d' % len(h)))
-        
-        h.append(conv2d(tf.pad(l_relu(h[-1]), [[0, 0], [1, 1], [1, 1], [0, 0]], mode='CONSTANT'), 1, 'd_h%d' % len(h), 
-                        padding='VALID',
-                        weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated)) # no BN
-
+        h.append(self.conv2d(tf.concat([image, c], axis=-1), 64, 2, 'd_h%d' % len(h)))      
+        h.append(self.bn(self.conv2d(l_relu(h[-1]), 128, 2, 'd_h%d' % len(h)), is_training, 'd_bn%d' % len(h)))        
+        h.append(self.bn(self.conv2d(l_relu(h[-1]), 256, 2, 'd_h%d' % len(h)), is_training, 'd_bn%d' % len(h)))
+        h.append(self.bn(self.conv2d(tf.pad(l_relu(h[-1]), [[0, 0], [1, 1], [1, 1], [0, 0]], mode='CONSTANT'), 
+                                     512, 1, 'd_h%d' % len(h), 'VALID'), 
+                         is_training, 'd_bn%d' % len(h)))      
+        h.append(self.conv2d(tf.pad(l_relu(h[-1]), [[0, 0], [1, 1], [1, 1], [0, 0]], mode='CONSTANT'), 
+                             1, 1, 'd_h%d' % len(h), 'VALID')) # no BN
         h.append(tf.nn.sigmoid(h[-1]))
         return h[-2], h[-1] if not with_h else h
         
