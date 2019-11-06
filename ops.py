@@ -25,7 +25,7 @@ class BN:
         self.epsilon = epsilon
         self.center = center
         
-    def __call__(self, inputs, is_training, name):
+    def __call__(self, inputs, is_training, name='batch_norm'):
         """
         Parameters
         inputs: [N, H, W, C]
