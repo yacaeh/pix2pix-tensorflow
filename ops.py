@@ -39,7 +39,7 @@ class Conv2D:
     """
     (standard) 2-D convolution
     """
-    def __init__(self, FH=4, FW=4, weight_decay_lambda=None, truncated=False, stddev=0.02, bias=True):
+    def __init__(self, FH=4, FW=4, weight_decay_lambda=None, truncated=False, stddev=0.02):
         """
         Parameters
         FH, FW: (int) filter height, filter width
@@ -48,9 +48,8 @@ class Conv2D:
         self.weight_decay_lambda = weight_decay_lambda
         self.truncated = truncated
         self.stddev = stddev
-        self.bias = bias
         
-    def __call__(self, inputs, FN, s=1, name='conv2d', padding='SAME'):
+    def __call__(self, inputs, FN, s=1, name='conv2d', padding='SAME', bias=True):
         """
         Parameters
         inputs: [N, H, W, C]
@@ -72,7 +71,7 @@ class Conv2D:
                                     regularizer=tf.contrib.layers.l2_regularizer(scale=self.weight_decay_lambda))
                     
             conv = tf.nn.conv2d(inputs, w, strides=[1, sdy, sdx, 1], padding=padding)
-            if not self.bias:
+            if not bias:
                 return conv
             else:
                 b = tf.get_variable(name='bias', shape=[FN], dtype=tf.float32, initializer=tf.constant_initializer(0.0))
@@ -92,9 +91,8 @@ class TConv2D:
         self.weight_decay_lambda = weight_decay_lambda
         self.truncated = truncated
         self.stddev = stddev
-        self.bias = bias
         
-    def __call__(self, inputs, output_shape, s=2, name='t_conv2d'):
+    def __call__(self, inputs, output_shape, s=2, name='t_conv2d', bias=True):
         """
         Parameters
         inputs: [N, H, W, C]
@@ -116,7 +114,7 @@ class TConv2D:
                                     regularizer=tf.contrib.layers.l2_regularizer(scale=self.weight_decay_lambda))
                 
             t_conv = tf.nn.conv2d_transpose(inputs, w, output_shape=output_shape, strides=[1, sdy, sdx, 1])
-            if not self.bias:
+            if not bias:
                 return t_conv
             else:
                 b = tf.get_variable(name='bias', shape=[FN], dtype=tf.float32, initializer=tf.constant_initializer(0.0))
