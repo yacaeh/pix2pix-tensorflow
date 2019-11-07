@@ -55,7 +55,7 @@ class Conv2D:
         Parameters
         inputs: [N, H, W, C]
         FN: (int) filter number
-        s: convolutional stride (sdy=sdx=s)
+        s: (int) convolutional stride (sdy=sdx=s)
         
         - filters: [FH, FW, C, FN]
         - outputs: [N, OH, OW, FN]
@@ -99,7 +99,7 @@ class TConv2D:
         Parameters
         inputs: [N, H, W, C]
         output_shape: [N, OH, OW, FN]
-        s: convolutional stride (sdy=sdx=s)
+        s: (int) convolutional stride (sdy=sdx=s)
         
         - filters: [FH, FW, FN, C] != filters.shape in conv2d 
         """
