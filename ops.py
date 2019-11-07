@@ -40,6 +40,10 @@ class Conv2D:
     (standard) 2-D convolution
     """
     def __init__(self, FH=4, FW=4, weight_decay_lambda=None, truncated=False, stddev=0.02, bias=True):
+        """
+        Parameters
+        FH, FW: (int) filter height, filter width
+        """
         self.FH, self.FW = FH, FW       
         self.weight_decay_lambda = weight_decay_lambda
         self.truncated = truncated
@@ -50,7 +54,7 @@ class Conv2D:
         """
         Parameters
         inputs: [N, H, W, C]
-        FN: filter number
+        FN: (int) filter number
         s: convolutional stride (sdy=sdx=s)
         
         - filters: [FH, FW, C, FN]
@@ -80,6 +84,10 @@ class TConv2D:
     2-D transposed convolution
     """
     def __init__(self, FH=4, FW=4, weight_decay_lambda=None, truncated=False, stddev=0.02, bias=True):
+        """
+        Parameters
+        FH, FW: (int) filter height, filter width
+        """
         self.FH, self.FW = FH, FW     
         self.weight_decay_lambda = weight_decay_lambda
         self.truncated = truncated
