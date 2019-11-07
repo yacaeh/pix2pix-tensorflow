@@ -76,8 +76,8 @@ class Pix2pix:
             if self._H_list[-1] == 1 or self._W_list[-1] == 1: break
                
         self.bn = BN()
-        self.conv2d = Conv2D(4, 4, self.weight_decay_lambda, self.truncated, 0.02, True)
-        self.tconv2d = TConv2D(4, 4, self.weight_decay_lambda, self.truncated, 0.02, True)
+        self.conv2d = Conv2D(4, 4, self.weight_decay_lambda, self.truncated, 0.02)
+        self.tconv2d = TConv2D(4, 4, self.weight_decay_lambda, self.truncated, 0.02)
         
         np.random.seed(self.seed)
         tf.set_random_seed(self.seed)
