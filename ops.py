@@ -82,7 +82,7 @@ class TConv2D:
     """
     2-D transposed convolution
     """
-    def __init__(self, FH=4, FW=4, weight_decay_lambda=None, truncated=False, stddev=0.02, bias=True):
+    def __init__(self, FH=4, FW=4, weight_decay_lambda=None, truncated=False, stddev=0.02):
         """
         Parameters
         FH, FW: (int) filter height, filter width
