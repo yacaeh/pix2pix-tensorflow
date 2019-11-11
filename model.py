@@ -134,7 +134,7 @@ class Pix2pix:
         h.append(self.conv2d(tf.pad(l_relu(h[-1]), [[0, 0], [1, 1], [1, 1], [0, 0]], mode='CONSTANT'), 
                              1, 1, 'd_h%d' % len(h), 'VALID')) # no BN
         h.append(tf.nn.sigmoid(h[-1]))
-        return h[-2], h[-1] if not with_h else h
+        return (h[-2], h[-1]) if not with_h else h
         
     def build_model(self):
         with tf.name_scope('placeholders'):
