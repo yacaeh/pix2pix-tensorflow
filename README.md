@@ -11,7 +11,7 @@
 - The number of GPUs > 2: mannually allocate them.
 - **Inputs shape: (N, H, W, C_in) (-1~1)**       
 - **Ground truths shape: (N, H, W, C_out) (-1~1)**
-- Normalization from min~max to -1~1: (data - 0.5*(max + min))/(0.5*(max - min))
+- Normalization from min\~max to -1\~1: (data - 0.5*(max + min))/(0.5*(max - min))
 ## Author
 Sehyeok Oh  @shoh4486
 ## Author's application
