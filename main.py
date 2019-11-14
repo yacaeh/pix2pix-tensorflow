@@ -19,6 +19,7 @@ flags.DEFINE_integer('in_channel', 3, 'input channel dimension')
 flags.DEFINE_integer('out_channel', 1, 'output channel dimension')
 flags.DEFINE_float('v_min', -10, 'minimum pixel value of ground truth')
 flags.DEFINE_float('v_max', 2000, 'maximum pixel value of ground truth')
+# FLAGS.v_min, FLAGS.v_max: to calculate MAE and MSE errors by reflecting grount truths' original range
 flags.DEFINE_integer('seed', 191015, 'seed number')
 flags.DEFINE_float('loss_lambda', 100.0, 'L1 loss lambda')
 flags.DEFINE_bool('LSGAN', False, 'applying LSGAN loss')
