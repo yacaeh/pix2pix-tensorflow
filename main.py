@@ -34,10 +34,9 @@ flags.DEFINE_integer('end_epoch', 200, 'end epoch')
 flags.DEFINE_bool('lr_decay', False, 'learning rate decay')
 flags.DEFINE_boolean('train', True, 'True for training, False for evaluation')
 flags.DEFINE_boolean('restore', False, 'True for retoring, False for raw training')
+# if not restoring, do not concern below flags.
 flags.DEFINE_integer('restore_trial_num', 1, 'directory number of pretrained model')
-flags.DEFINE_integer('restore_sess_num', 195, 'sess number of pretrained model')
-flags.DEFINE_integer('restart_epoch', 200, 'train restart epoch') 
-flags.DEFINE_integer('re_end_epoch', 1000, 'train re-end epoch')
+flags.DEFINE_integer('restore_sess_num', 199, 'sess number of pretrained model')
 flags.DEFINE_boolean('eval_with_test_acc', True, 'True for test accuracies evaluation')
 FLAGS = flags.FLAGS
 
@@ -84,8 +83,6 @@ def main(_):
         if FLAGS.restore:
             saver = tf.train.Saver()
             saver.restore(sess, os.path.join("./trials", "trial_{0}".format(FLAGS.restore_trial_num), "sess-{0}".format(FLAGS.restore_sess_num)))
-            FLAGS.start_epoch = FLAGS.restart_epoch
-            FLAGS.end_epoch = FLAGS.re_end_epoch
             pix2pix.train(
                           inputs=(inputs_train, inputs_train_, inputs_valid),
                           gts=(gts_train, gts_train_, gts_valid),
