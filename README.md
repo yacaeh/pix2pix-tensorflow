@@ -7,7 +7,6 @@
 ## In this code
 - Latent variable z was removed for deterministic mapping (i.e. input image and ground truth image are 1:1 matched).
 - tf.\_\_version\_\_ == '1.12.0' ~ '1.14.0'
-- Only CPU: set FLAGS.gpu_num to 0 in main.py.
 - The number of GPUs > 2: mannually allocate them.
 - **Inputs shape: (N, H, W, C_in) (-1~1)**       
 - **Ground truths shape: (N, H, W, C_out) (-1~1)**
