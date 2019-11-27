@@ -36,7 +36,6 @@ flags.DEFINE_integer('end_epoch', 200, 'end epoch')
 flags.DEFINE_bool('lr_decay', False, 'learning rate decay')
 flags.DEFINE_boolean('train', False, 'True for training, False for evaluation')
 flags.DEFINE_boolean('restore', True, 'True for retoring, False for raw training')
-# edit below if needed
 flags.DEFINE_string('pre_train_dir', os.path.join("./trials", "trial_{0}".format(23), "sess-{0}".format(1499)), 'when retraining, directory to restore. if none, just leave it.')
 flags.DEFINE_integer('restart_epoch', 1500, 'restart epoch') 
 flags.DEFINE_integer('re_end_epoch', 2000, 're-end epoch')
