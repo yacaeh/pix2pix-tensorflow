@@ -19,7 +19,7 @@ flags.DEFINE_integer('out_channel', 1, 'output channel dimension')
 flags.DEFINE_float('v_min', -10, 'minimum pixel value of ground truth')
 flags.DEFINE_float('v_max', 2000, 'maximum pixel value of ground truth')
 # FLAGS.v_min, FLAGS.v_max: to calculate MAE and MSE errors by reflecting grount truths' original range
-flags.DEFINE_integer('seed', 191015, 'seed number')
+flags.DEFINE_integer('seed', 1, 'seed number')
 flags.DEFINE_float('loss_lambda', 100.0, 'L1 loss lambda')
 flags.DEFINE_bool('LSGAN', False, 'applying LSGAN loss')
 flags.DEFINE_float('weight_decay_lambda', 0.0, 'L2 weight decay lambda')
@@ -34,7 +34,8 @@ flags.DEFINE_integer('end_epoch', 200, 'end epoch')
 flags.DEFINE_bool('lr_decay', False, 'learning rate decay')
 flags.DEFINE_boolean('train', False, 'True for training, False for evaluation')
 flags.DEFINE_boolean('restore', True, 'True for retoring, False for raw training')
-flags.DEFINE_string('pre_train_dir', os.path.join("./trials", "trial_{0}".format(23), "sess-{0}".format(1499)), 'when retraining, directory to restore. if none, just leave it.')
+flags.DEFINE_integer('restore_trial_num', 1, 'directory number of pretrained model')
+flags.DEFINE_integer('restore_sess_num', 1499, 'sess number of pretrained model')
 flags.DEFINE_integer('restart_epoch', 1500, 'restart epoch') 
 flags.DEFINE_integer('re_end_epoch', 2000, 're-end epoch')
 flags.DEFINE_boolean('eval_with_test_acc', True, 'True for test accuracies evaluation')
@@ -42,6 +43,9 @@ FLAGS = flags.FLAGS
 
 def main(_):
     flags.DEFINE_string('save_dir', os.path.join("./trials", "trial_{0}".format(FLAGS.trial_num)), 'output saving directory')
+    flags.DEFINE_string('pre_train_dir', os.path.join("./trials", "trial_{0}".format(FLAGS.restore_trial_num), 
+                                                      "sess-{0}".format(FLAGS.restore_sess_num)), 
+                        'when retraining, directory to restore.')
     pprint.pprint(flags.FLAGS.__flags)
     
     mkdir(FLAGS.save_dir)
