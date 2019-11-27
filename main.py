@@ -36,16 +36,13 @@ flags.DEFINE_boolean('train', False, 'True for training, False for evaluation')
 flags.DEFINE_boolean('restore', True, 'True for retoring, False for raw training')
 flags.DEFINE_integer('restore_trial_num', 1, 'directory number of pretrained model')
 flags.DEFINE_integer('restore_sess_num', 1499, 'sess number of pretrained model')
-flags.DEFINE_integer('restart_epoch', 1500, 'restart epoch') 
-flags.DEFINE_integer('re_end_epoch', 2000, 're-end epoch')
+flags.DEFINE_integer('restart_epoch', 1500, 'train restart epoch') 
+flags.DEFINE_integer('re_end_epoch', 2000, 'train re-end epoch')
 flags.DEFINE_boolean('eval_with_test_acc', True, 'True for test accuracies evaluation')
 FLAGS = flags.FLAGS
 
 def main(_):
     flags.DEFINE_string('save_dir', os.path.join("./trials", "trial_{0}".format(FLAGS.trial_num)), 'output saving directory')
-    flags.DEFINE_string('pre_train_dir', os.path.join("./trials", "trial_{0}".format(FLAGS.restore_trial_num), 
-                                                      "sess-{0}".format(FLAGS.restore_sess_num)), 
-                        'when retraining, directory to restore.')
     pprint.pprint(flags.FLAGS.__flags)
     
     mkdir(FLAGS.save_dir)
@@ -86,7 +83,7 @@ def main(_):
         
         if FLAGS.restore:
             saver = tf.train.Saver()
-            saver.restore(sess, FLAGS.pre_train_dir)
+            saver.restore(sess, os.path.join("./trials", "trial_{0}".format(FLAGS.restore_trial_num), "sess-{0}".format(FLAGS.restore_sess_num)))
             FLAGS.start_epoch = FLAGS.restart_epoch
             FLAGS.end_epoch = FLAGS.re_end_epoch
             pix2pix.train(
@@ -130,7 +127,7 @@ def main(_):
             
         if FLAGS.restore:
             saver = tf.train.Saver()
-            saver.restore(sess, FLAGS.pre_train_dir)
+            saver.restore(sess, os.path.join("./trials", "trial_{0}".format(FLAGS.restore_trial_num), "sess-{0}".format(FLAGS.restore_sess_num)))
             if FLAGS.eval_with_test_acc:
                 test_results = pix2pix.evaluation(
                                                   inputs=inputs_test,
