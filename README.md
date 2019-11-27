@@ -13,8 +13,14 @@
 - **Ground truths shape: (N, H, W, C_out) (-1~1)**
 - Normalization from min\~max to -1\~1: (data - 0.5*(max + min))/(0.5*(max - min))
 ## Run example
-- training mode: $ python main.py --trial_num=1 --height=100 --width=100 --train
-- testing mode: $ python main.py --trial_num=2 --train=False --restore --restore_trial_num=1 --restore_sess_num=1499
+- training mode:
+```
+$ python main.py --trial_num=1 --height=100 --width=100 --train
+```
+- testing mode: 
+```
+$ python main.py --trial_num=2 --train=False --restore --restore_trial_num=1 --restore_sess_num=199 --eval_with_test_acc
+```
 - Add other FLAGS options if necessary
 ## Author
 Sehyeok Oh  @shoh4486
