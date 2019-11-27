@@ -15,7 +15,7 @@
 ## Run example
 - training mode:
 ```
-$ python main.py --trial_num=1 --height=100 --width=100 --train
+$ python main.py --trial_num=1 --height=100 --width=100 --train --start_epoch=0 --end_epoch=200
 ```
 - testing mode: 
 ```
