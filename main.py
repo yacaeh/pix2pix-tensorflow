@@ -10,9 +10,8 @@ import pprint
 from model import Pix2pix
 from utils import *
 
-trial_num = 1
-
 flags = tf.app.flags
+flags.DEFINE_integer('trial_num', 1, 'trial number')
 flags.DEFINE_integer('height', 363, 'image height')
 flags.DEFINE_integer('width', 298, 'image width')
 flags.DEFINE_integer('in_channel', 3, 'input channel dimension')
@@ -26,7 +25,6 @@ flags.DEFINE_bool('LSGAN', False, 'applying LSGAN loss')
 flags.DEFINE_float('weight_decay_lambda', 0.0, 'L2 weight decay lambda')
 flags.DEFINE_bool('truncated', False, 'truncated weight distribution')
 flags.DEFINE_string('optimizer', 'Adam', 'optimizer')
-flags.DEFINE_string('save_dir', os.path.join("./trials", "trial_{0}".format(trial_num)), 'output saving directory')
 flags.DEFINE_integer('gpu_num', 2, 'the number of GPUs')
 flags.DEFINE_integer('batch_size_training', 2, 'batch size')
 flags.DEFINE_float('lr_init', 1e-04, 'initial learning rate')
@@ -43,6 +41,7 @@ flags.DEFINE_boolean('eval_with_test_acc', True, 'True for test accuracies evalu
 FLAGS = flags.FLAGS
 
 def main(_):
+    flags.DEFINE_string('save_dir', os.path.join("./trials", "trial_{0}".format(FLAGS.trial_num)), 'output saving directory')
     pprint.pprint(flags.FLAGS.__flags)
     
     mkdir(FLAGS.save_dir)
