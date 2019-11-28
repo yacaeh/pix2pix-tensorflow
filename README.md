@@ -18,7 +18,7 @@ $ python main.py --trial_num=1 --height=100 --width=100 --train=True --start_epo
 ```
 - testing mode: 
 ```
-$ python main.py --trial_num=2 --train=False --restore=True --restore_trial_num=1 --restore_sess_num=199 --eval_with_test_acc
+$ python main.py --trial_num=2 --train=False --restore=True --restore_trial_num=1 --restore_sess_num=199 --eval_with_test_acc=True
 ```
 - Add other FLAGS options if necessary
 ## Author
