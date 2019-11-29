@@ -55,7 +55,9 @@ def main(_):
         run_config.gpu_options.allow_growth = True
         sess = tf.Session(config=run_config)
     else: # only cpu
-        sess = tf.Session()
+        run_config = tf.ConfigProto(
+                device_count={'GPU': 0}) # even if there are GPUs, they will be ignored.
+        sess = tf.Session(config=run_config)
     
     pix2pix = Pix2pix(
                       sess=sess,
