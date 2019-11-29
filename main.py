@@ -11,13 +11,13 @@ from model import Pix2pix
 from utils import *
 
 flags = tf.app.flags
-flags.DEFINE_integer('trial_num', 1, 'trial number')
+# for model class instantiation
 flags.DEFINE_integer('height', 363, 'image height')
 flags.DEFINE_integer('width', 298, 'image width')
-flags.DEFINE_integer('in_channel', 3, 'input channel dimension')
-flags.DEFINE_integer('out_channel', 1, 'output channel dimension')
-flags.DEFINE_float('v_min', -10, 'minimum pixel value of ground truth')
-flags.DEFINE_float('v_max', 2000, 'maximum pixel value of ground truth')
+flags.DEFINE_integer('in_channel', 3, 'the number of input channels')
+flags.DEFINE_integer('out_channel', 1, 'the number of output channels')
+flags.DEFINE_float('v_min', -10, 'minimum pixel value of the ground truth')
+flags.DEFINE_float('v_max', 2000, 'maximum pixel value of the ground truth')
 # FLAGS.v_min, FLAGS.v_max: to calculate MAE and MSE errors by reflecting grount truths' original range
 flags.DEFINE_integer('seed', 1, 'seed number')
 flags.DEFINE_float('loss_lambda', 100.0, 'L1 loss lambda')
@@ -26,17 +26,20 @@ flags.DEFINE_float('weight_decay_lambda', 0.0, 'L2 weight decay lambda')
 flags.DEFINE_bool('truncated', False, 'truncated weight distribution')
 flags.DEFINE_string('optimizer', 'Adam', 'optimizer')
 flags.DEFINE_integer('gpu_num', 2, 'the number of GPUs')
+#
+flags.DEFINE_integer('trial_num', 1, 'trial number')
 flags.DEFINE_integer('batch_size_training', 2, 'batch size')
 flags.DEFINE_float('lr_init', 1e-04, 'initial learning rate')
-flags.DEFINE_integer('check_epoch', 5, 'check epoch')
+flags.DEFINE_bool('lr_decay', False, 'applying learning rate decay')
+#
+flags.DEFINE_boolean('train', True, 'True for training, False for testing')
+flags.DEFINE_boolean('restore', False, 'True for restoring, False for raw training')
 flags.DEFINE_integer('start_epoch', 0, 'start epoch') 
 flags.DEFINE_integer('end_epoch', 200, 'end epoch')
-flags.DEFINE_bool('lr_decay', False, 'learning rate decay')
-flags.DEFINE_boolean('train', True, 'True for training, False for evaluation')
-flags.DEFINE_boolean('restore', False, 'True for retoring, False for raw training')
+flags.DEFINE_integer('check_epoch', 5, 'check epoch')
 # if not restoring, do not concern below flags.
-flags.DEFINE_integer('restore_trial_num', 1, 'directory number of pretrained model')
-flags.DEFINE_integer('restore_sess_num', 199, 'sess number of pretrained model')
+flags.DEFINE_integer('restore_trial_num', 1, 'directory number of the pretrained model')
+flags.DEFINE_integer('restore_sess_num', 199, 'sess number of the pretrained model')
 flags.DEFINE_boolean('eval_with_test_acc', True, 'True for test accuracies evaluation')
 FLAGS = flags.FLAGS
 
@@ -68,11 +71,10 @@ def main(_):
                       weight_decay_lambda=FLAGS.weight_decay_lambda,
                       truncated=FLAGS.truncated,
                       optimizer=FLAGS.optimizer,
-                      save_dir=FLAGS.save_dir,
                       gpu_num=FLAGS.gpu_num
                       )
     
-    global_variables_list()
+    tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
     
     if FLAGS.train:
         from data.data_preprocessing import inputs_train, inputs_train_, inputs_valid, gts_train, gts_train_, gts_valid

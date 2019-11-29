@@ -23,7 +23,7 @@ class Pix2pix:
     pix2pix by Isola, P. et al., Image-to-image translation with conditional adversarial networks, arXiv:1611.07004.
     """
     def __init__(self, sess, H_in, W_in, C_in, C_out, v_min, v_max, seed, loss_lambda=100.0, LSGAN=False, 
-                 weight_decay_lambda=1e-07, truncated=False, optimizer='Adam', save_dir="./", gpu_num=2):
+                 weight_decay_lambda=1e-07, truncated=False, optimizer='Adam', gpu_num=2):
         """
         Parameters
         sess: TensorFlow session
@@ -37,7 +37,6 @@ class Pix2pix:
         weight_decay_lambda: L2 weight decay lambda (0.0: do not employ)
         truncated: truncated weight distribution
         optimizer: only Adam adopted
-        save_dir: saving directory for the training results
         gpu_num: the number of gpus
         """
         self.sess = sess
@@ -54,7 +53,6 @@ class Pix2pix:
         self.truncated = truncated
         self.optimizer = optimizer
         self._beta1 = 0.5 # beta1 in Adam optimizer
-        self.save_dir = save_dir
         self.gpu_num = gpu_num
         assert isinstance(self.H, int) and isinstance(self.W, int), 'H and W should be integers.'
         self._H_list, self._W_list, self._C_list, self._s_list = [self.H], [self.W], [self.C_in], [] # _s_list: stride list
@@ -264,7 +262,7 @@ class Pix2pix:
             self.sess.run(tf.global_variables_initializer())
             
         merge = tf.summary.merge_all()
-        writer = tf.summary.FileWriter(self.save_dir, self.sess.graph)
+        writer = tf.summary.FileWriter(config.save_dir, self.sess.graph)
         
         self.MAE_train_vals, self.MSE_train_vals, self.R2_train_vals, self.PSNR_train_vals, self.SSIM_train_vals = [], [], [], [], []
         self.MAE_valid_vals, self.MSE_valid_vals, self.R2_valid_vals, self.PSNR_valid_vals, self.SSIM_valid_vals = [], [], [], [], []
