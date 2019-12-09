@@ -16,8 +16,8 @@ flags.DEFINE_integer('height', 363, 'image height')
 flags.DEFINE_integer('width', 298, 'image width')
 flags.DEFINE_integer('in_channel', 3, 'the number of input channels')
 flags.DEFINE_integer('out_channel', 1, 'the number of output channels')
-flags.DEFINE_float('v_min', -10, 'minimum pixel value of the ground truth')
-flags.DEFINE_float('v_max', 2000, 'maximum pixel value of the ground truth')
+flags.DEFINE_float('v_min', -10, 'minimum pixel value of the ground truth (before normalization)')
+flags.DEFINE_float('v_max', 2000, 'maximum pixel value of the ground truth (before normalization)')
 # FLAGS.v_min, FLAGS.v_max: to calculate MAE and MSE errors by reflecting grount truths' original range
 flags.DEFINE_integer('seed', 1, 'seed number')
 flags.DEFINE_float('loss_lambda', 100.0, 'L1 loss lambda')
@@ -49,6 +49,7 @@ def main(_):
     
     mkdir(FLAGS.save_dir)
     mkdir(os.path.join(FLAGS.save_dir, "test"))
+    mkdir(os.path.join(FLAGS.save_dir, "loss_acc"))
     
     if FLAGS.gpu_num: # gpu_num >= 1
         run_config = tf.ConfigProto()
@@ -91,30 +92,28 @@ def main(_):
                           inputs=(inputs_train, inputs_train_, inputs_valid),
                           gts=(gts_train, gts_train_, gts_valid),
                           config=FLAGS
-                          )
-            saver = tf.train.Saver()
-            saver.save(sess, os.path.join(FLAGS.save_dir, "sess"), global_step=FLAGS.end_epoch-1)
-        
+                          )       
         else:  
             pix2pix.train(
                           inputs=(inputs_train, inputs_train_, inputs_valid),
                           gts=(gts_train, gts_train_, gts_valid),
                           config=FLAGS
                           )
-            saver = tf.train.Saver()
-            saver.save(sess, os.path.join(FLAGS.save_dir, "sess"), global_step=FLAGS.end_epoch-1)
+            
+        saver = tf.train.Saver()
+        saver.save(sess, os.path.join(FLAGS.save_dir, "sess"), global_step=FLAGS.end_epoch-1)
         
-        np.savetxt(os.path.join(FLAGS.save_dir, "MAE_train.txt"), pix2pix.MAE_train_vals)
-        np.savetxt(os.path.join(FLAGS.save_dir, "MSE_train.txt"), pix2pix.MSE_train_vals)
-        np.savetxt(os.path.join(FLAGS.save_dir, "R2_train.txt"), pix2pix.R2_train_vals)
-        np.savetxt(os.path.join(FLAGS.save_dir, "PSNR_train.txt"), pix2pix.PSNR_train_vals)
-        np.savetxt(os.path.join(FLAGS.save_dir, "SSIM_train.txt"), pix2pix.SSIM_train_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "MAE_train.txt"), pix2pix.MAE_train_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "MSE_train.txt"), pix2pix.MSE_train_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "R2_train.txt"), pix2pix.R2_train_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "PSNR_train.txt"), pix2pix.PSNR_train_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "SSIM_train.txt"), pix2pix.SSIM_train_vals)
         
-        np.savetxt(os.path.join(FLAGS.save_dir, "MAE_valid.txt"), pix2pix.MAE_valid_vals)
-        np.savetxt(os.path.join(FLAGS.save_dir, "MSE_valid.txt"), pix2pix.MSE_valid_vals)
-        np.savetxt(os.path.join(FLAGS.save_dir, "R2_valid.txt"), pix2pix.R2_valid_vals)
-        np.savetxt(os.path.join(FLAGS.save_dir, "PSNR_valid.txt"), pix2pix.PSNR_valid_vals)
-        np.savetxt(os.path.join(FLAGS.save_dir, "SSIM_valid.txt"), pix2pix.SSIM_valid_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "MAE_valid.txt"), pix2pix.MAE_valid_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "MSE_valid.txt"), pix2pix.MSE_valid_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "R2_valid.txt"), pix2pix.R2_valid_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "PSNR_valid.txt"), pix2pix.PSNR_valid_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "SSIM_valid.txt"), pix2pix.SSIM_valid_vals)
         
     else: # testing mode
         try:
