@@ -132,6 +132,7 @@ def main(_):
                 test_results = pix2pix.evaluation(
                                                   inputs=inputs_test,
                                                   gts=gts_test,
+                                                  is_training=False,
                                                   with_h=False
                                                   )
                 G_c_test, MAE_test, MSE_test, R2_test, PSNR_test, SSIM_test = test_results
@@ -145,6 +146,7 @@ def main(_):
                 G_c_test = pix2pix.evaluation(
                                               inputs=inputs_test,
                                               gts=None,
+                                              is_training=False,
                                               with_h=False
                                               )
             # denormalize to the original range (from -1~1 to v_min~v_max)
