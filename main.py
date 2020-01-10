@@ -25,7 +25,11 @@ flags.DEFINE_bool('LSGAN', False, 'applying LSGAN loss')
 flags.DEFINE_float('weight_decay_lambda', 0.0, 'L2 weight decay lambda')
 flags.DEFINE_bool('truncated', False, 'truncated weight distribution')
 flags.DEFINE_string('optimizer', 'Adam', 'optimizer')
-flags.DEFINE_integer('gpu_num', 2, 'the number of GPUs')
+flags.DEFINE_list('gpu_alloc', [0, 1], 'specifying which GPU(s) to be used; [] if to use only cpu')
+# e.g. set it to [0, 1] if to use the first(0) and the second(1) gpus
+# Note: the order of elements in FLAGS.gpu_alloc should be correctly inserted.
+# if it is [1, 0], the first(0) gpu is assigned to '/device:GPU:1' and the second(1) gpu to '/device:GPU:0'.
+# if it is [2, 3], the third(2) gpu is assgined to '/device:GPU:0' and the fourth(3) gpu to '/device:GPU:1'.
 #
 flags.DEFINE_integer('trial_num', 1, 'trial number')
 flags.DEFINE_integer('batch_size_training', 2, 'batch size')
@@ -44,20 +48,25 @@ flags.DEFINE_boolean('eval_with_test_acc', True, 'True for test accuracies evalu
 FLAGS = flags.FLAGS
 
 def main(_):
-    flags.DEFINE_string('save_dir', os.path.join("./trials", "trial_{0}".format(FLAGS.trial_num)), 'output saving directory')
+    flags.DEFINE_string('save_dir', os.path.join("./trials", "trial_{0}".format(FLAGS.trial_num)), 
+                        'output saving directory')
     pprint.pprint(flags.FLAGS.__flags)
     
     mkdir(FLAGS.save_dir)
     mkdir(os.path.join(FLAGS.save_dir, "test"))
     mkdir(os.path.join(FLAGS.save_dir, "loss_acc"))
     
-    if FLAGS.gpu_num: # gpu_num >= 1
-        run_config = tf.ConfigProto()
-        run_config.gpu_options.allow_growth = True
+    if FLAGS.gpu_alloc: # gpu_num >= 1
+        visible_device_list = ','.join([str(i) for i in FLAGS.gpu_alloc])    
+        gpu_options = tf.GPUOptions(
+            allow_growth=True, 
+            visible_device_list=visible_device_list
+            )
+        run_config = tf.ConfigProto(gpu_options=gpu_options)
         sess = tf.Session(config=run_config)
     else: # only cpu
-        run_config = tf.ConfigProto(
-                device_count={'GPU': 0}) # even if there are GPUs, they will be ignored.
+        run_config = tf.ConfigProto(device_count={'GPU': 0}) 
+        # even if there are GPUs, they will be ignored.
         sess = tf.Session(config=run_config)
     
     pix2pix = Pix2pix(
@@ -74,20 +83,22 @@ def main(_):
                       weight_decay_lambda=FLAGS.weight_decay_lambda,
                       truncated=FLAGS.truncated,
                       optimizer=FLAGS.optimizer,
-                      gpu_num=FLAGS.gpu_num
+                      gpu_alloc=FLAGS.gpu_alloc
                       )
     
     tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
     
     if FLAGS.train:
-        from data.data_preprocessing import inputs_train, inputs_train_, inputs_valid, gts_train, gts_train_, gts_valid
+        from data.data_preprocessing import inputs_train, inputs_train_, \
+        inputs_valid, gts_train, gts_train_, gts_valid
         data_col = [inputs_train, inputs_train_, inputs_valid, gts_train, gts_train_, gts_valid]
         for i in data_col:
             pixel_checker(i)
         
         if FLAGS.restore:
             saver = tf.train.Saver()
-            saver.restore(sess, os.path.join("./trials", "trial_{0}".format(FLAGS.restore_trial_num), "sess-{0}".format(FLAGS.restore_sess_num)))
+            saver.restore(sess, os.path.join("./trials", "trial_{0}".format(FLAGS.restore_trial_num), 
+                                             "sess-{0}".format(FLAGS.restore_sess_num)))
             pix2pix.train(
                           inputs=(inputs_train, inputs_train_, inputs_valid),
                           gts=(gts_train, gts_train_, gts_valid),
@@ -103,17 +114,27 @@ def main(_):
         saver = tf.train.Saver()
         saver.save(sess, os.path.join(FLAGS.save_dir, "sess"), global_step=FLAGS.end_epoch-1)
         
-        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "MAE_train.txt"), pix2pix.MAE_train_vals)
-        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "MSE_train.txt"), pix2pix.MSE_train_vals)
-        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "R2_train.txt"), pix2pix.R2_train_vals)
-        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "PSNR_train.txt"), pix2pix.PSNR_train_vals)
-        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "SSIM_train.txt"), pix2pix.SSIM_train_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "MAE_train.txt"), 
+                   pix2pix.MAE_train_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "MSE_train.txt"), 
+                   pix2pix.MSE_train_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "R2_train.txt"), 
+                   pix2pix.R2_train_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "PSNR_train.txt"), 
+                   pix2pix.PSNR_train_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "SSIM_train.txt"), 
+                   pix2pix.SSIM_train_vals)
         
-        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "MAE_valid.txt"), pix2pix.MAE_valid_vals)
-        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "MSE_valid.txt"), pix2pix.MSE_valid_vals)
-        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "R2_valid.txt"), pix2pix.R2_valid_vals)
-        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "PSNR_valid.txt"), pix2pix.PSNR_valid_vals)
-        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "SSIM_valid.txt"), pix2pix.SSIM_valid_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "MAE_valid.txt"), 
+                   pix2pix.MAE_valid_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "MSE_valid.txt"), 
+                   pix2pix.MSE_valid_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "R2_valid.txt"), 
+                   pix2pix.R2_valid_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "PSNR_valid.txt"), 
+                   pix2pix.PSNR_valid_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "SSIM_valid.txt"), 
+                   pix2pix.SSIM_valid_vals)
         
     else: # testing mode
         try:
@@ -127,7 +148,8 @@ def main(_):
             
         if FLAGS.restore:
             saver = tf.train.Saver()
-            saver.restore(sess, os.path.join("./trials", "trial_{0}".format(FLAGS.restore_trial_num), "sess-{0}".format(FLAGS.restore_sess_num)))
+            saver.restore(sess, os.path.join("./trials", "trial_{0}".format(FLAGS.restore_trial_num), 
+                                             "sess-{0}".format(FLAGS.restore_sess_num)))
             if FLAGS.eval_with_test_acc:
                 test_results = pix2pix.evaluation(
                                                   inputs=inputs_test,
@@ -136,11 +158,16 @@ def main(_):
                                                   with_h=False
                                                   )
                 G_c_test, MAE_test, MSE_test, R2_test, PSNR_test, SSIM_test = test_results
-                np.savetxt(os.path.join(FLAGS.save_dir, "test", "MAE_test.txt"), MAE_test)
-                np.savetxt(os.path.join(FLAGS.save_dir, "test", "MSE_test.txt"), MSE_test)
-                np.savetxt(os.path.join(FLAGS.save_dir, "test", "R2_test.txt"), R2_test)
-                np.savetxt(os.path.join(FLAGS.save_dir, "test", "PSNR_test.txt"), PSNR_test)
-                np.savetxt(os.path.join(FLAGS.save_dir, "test", "SSIM_test.txt"), SSIM_test)
+                np.savetxt(os.path.join(FLAGS.save_dir, "test", "MAE_test.txt"), 
+                           MAE_test)
+                np.savetxt(os.path.join(FLAGS.save_dir, "test", "MSE_test.txt"), 
+                           MSE_test)
+                np.savetxt(os.path.join(FLAGS.save_dir, "test", "R2_test.txt"), 
+                           R2_test)
+                np.savetxt(os.path.join(FLAGS.save_dir, "test", "PSNR_test.txt"), 
+                           PSNR_test)
+                np.savetxt(os.path.join(FLAGS.save_dir, "test", "SSIM_test.txt"), 
+                           SSIM_test)
                 
             else:
                 G_c_test = pix2pix.evaluation(
@@ -153,7 +180,8 @@ def main(_):
             G_c_test = pix2pix._alpha*G_c_test + pix2pix._beta      
             for i in range(len(G_c_test)):
                 for c in range(FLAGS.out_channel):
-                    np.savetxt(os.path.join(FLAGS.save_dir, "test", "test_result%d_channel%d.txt" % (i, c)), G_c_test[i, :, :, c])
+                    np.savetxt(os.path.join(FLAGS.save_dir, "test", "test_result%d_channel%d.txt" % (i, c)), 
+                               G_c_test[i, :, :, c])
         else:
             raise NotImplementedError('pretrained session must be restored.')
             

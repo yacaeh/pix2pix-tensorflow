@@ -20,24 +20,26 @@ def channel_generator():
         
 class Pix2pix:
     """
-    pix2pix by Isola, P. et al., Image-to-image translation with conditional adversarial networks, arXiv:1611.07004.
+    pix2pix by Isola, P. et al., Image-to-image translation with conditional 
+    adversarial networks, arXiv:1611.07004.
     """
-    def __init__(self, sess, H_in, W_in, C_in, C_out, v_min, v_max, seed, loss_lambda=100.0, LSGAN=False, 
-                 weight_decay_lambda=1e-07, truncated=False, optimizer='Adam', gpu_num=2):
+    def __init__(self, sess, H_in, W_in, C_in, C_out, v_min, v_max, seed, 
+                 loss_lambda=100.0, LSGAN=False, weight_decay_lambda=1e-07, 
+                 optimizer='Adam', gpu_alloc=[0]):
         """
         Parameters
         sess: TensorFlow session
-        H_in, W_in, C_in: input shape (height, width, channel)
-        C_out: output channel number (H_out==H_in, W_out==W_in)
-        v_min, v_max: min and max of training data 
-                      (for data de-normalization: from x': -1~1 to x: v_min~v_max, by applying alpha*x' + beta)
-        seed: random seed for random modules in numpy and TensorFlow
-        loss_lambda: L1 loss lambda (pix2pix: 100.0)
-        LSGAN: applying LSGAN loss
-        weight_decay_lambda: L2 weight decay lambda (0.0: do not employ)
-        truncated: truncated weight distribution
-        optimizer: only Adam adopted
-        gpu_num: the number of gpus
+        H_in, W_in, C_in: (int) input shape (height, width, channel)
+        C_out: (int) output channel number (H_out==H_in, W_out==W_in)
+        v_min, v_max: (int or float) min and max of training data 
+                      (for data de-normalization: from x': -1~1 to x: v_min~v_max, 
+                      by applying alpha*x' + beta)
+        seed: (int) random seed for random modules in numpy and TensorFlow
+        loss_lambda: (float) L1 loss lambda (pix2pix: 100.0)
+        LSGAN: (bool) applying LSGAN loss
+        weight_decay_lambda: (float) L2 weight decay lambda (0.0: do not employ)
+        optimizer: (str) only Adam adopted
+        gpu_alloc: (list) specifying which GPU(s) to be used; [] if to use only cpu
         """
         self.sess = sess
         self.H = H_in
@@ -50,12 +52,12 @@ class Pix2pix:
         self.loss_lambda = loss_lambda
         self.LSGAN = LSGAN
         self.weight_decay_lambda = weight_decay_lambda
-        self.truncated = truncated
         self.optimizer = optimizer
         self._beta1 = 0.5 # beta1 in Adam optimizer
-        self.gpu_num = gpu_num
-        assert isinstance(self.H, int) and isinstance(self.W, int), 'H and W should be integers.'
-        self._H_list, self._W_list, self._C_list, self._s_list = [self.H], [self.W], [self.C_in], [] # _s_list: stride list
+        self.gpu_alloc = gpu_alloc
+        assert isinstance(self.H, int) and isinstance(self.W, int)
+        self._H_list, self._W_list, self._C_list, self._s_list = \
+        [self.H], [self.W], [self.C_in], [] # _s_list: stride list
         C_ref = channel_generator()
         
         while 1: 
@@ -63,7 +65,8 @@ class Pix2pix:
                 self._H_list.append(int(np.ceil(self._H_list[-1]/3)))
                 self._W_list.append(int(np.ceil(self._W_list[-1]/3)))
                 self._C_list.append(next(C_ref))
-                self._s_list.append(3) # if the number of H or W becomes 3 when reducing spatial dimensions, apply stride 3.
+                self._s_list.append(3) 
+                # if H or W becomes 3 when reducing spatial dimensions, apply stride 3.
                 break
                 
             self._H_list.append(int(np.ceil(self._H_list[-1]/2)))
@@ -73,8 +76,8 @@ class Pix2pix:
             if self._H_list[-1] == 1 or self._W_list[-1] == 1: break
                
         self.bn = BN()
-        self.conv2d = Conv2D(4, 4, self.weight_decay_lambda, self.truncated, 0.02)
-        self.tconv2d = TConv2D(4, 4, self.weight_decay_lambda, self.truncated, 0.02)
+        self.conv2d = Conv2D(4, 4, self.weight_decay_lambda)
+        self.tconv2d = TConv2D(4, 4, self.weight_decay_lambda)
         
         np.random.seed(self.seed)
         tf.set_random_seed(self.seed)
@@ -94,21 +97,27 @@ class Pix2pix:
             if i == 0: # first layer, no BN
                 h.append(self.conv2d(c, C[i+1], s[i], 'g_h%d' % len(h)))
             else:
-                h.append(self.bn(self.conv2d(l_relu(h[-1]), C[i+1], s[i], 'g_h%d' % len(h)), is_training, 'g_bn%d' % len(h)))
+                h.append(self.bn(self.conv2d(l_relu(h[-1]), C[i+1], s[i], 
+                                             'g_h%d' % len(h)), 
+                                 is_training, 'g_bn%d' % len(h)))
         # DECODER
         for j in range(len(H)-1):
             if j == 0:
-                h.append(self.bn(self.tconv2d(l_relu(h[-1]), [batch_size, H[-2-j], W[-2-j], C[-2-j]], s[-1-j], 'g_h%d' % len(h)), 
+                h.append(self.bn(self.tconv2d(l_relu(h[-1]), 
+                                              [batch_size, H[-2-j], W[-2-j], C[-2-j]], s[-1-j], 
+                                              'g_h%d' % len(h)), 
                                  is_training, 'g_bn%d' % len(h)))
             
             elif j > 0 and j < len(H)-2:
                 h.append(self.bn(self.tconv2d(tf.nn.relu(tf.concat([h[-1], h[-1-2*j]], axis=-1)), 
-                                              [batch_size, H[-2-j], W[-2-j], C[-2-j]], s[-1-j], 'g_h%d' % len(h)), 
+                                              [batch_size, H[-2-j], W[-2-j], C[-2-j]], s[-1-j], 
+                                              'g_h%d' % len(h)), 
                                  is_training, 'g_bn%d' % len(h)))
             
             else: # last layer, no BN, C=C_out
                 h.append(self.tconv2d(tf.nn.relu(tf.concat([h[-1], h[-1-2*j]], axis=-1)), 
-                                      [batch_size, H[-2-j], W[-2-j], self.C_out], s[-1-j], 'g_h%d' % len(h)))
+                                      [batch_size, H[-2-j], W[-2-j], self.C_out], s[-1-j], 
+                                      'g_h%d' % len(h)))
         
         h.append(tf.tanh(h[-1]))
         return h[-1] if not with_h else h
@@ -123,12 +132,18 @@ class Pix2pix:
         """
         h = []
         h.append(self.conv2d(tf.concat([image, c], axis=-1), 64, 2, 'd_h%d' % len(h)))      
-        h.append(self.bn(self.conv2d(l_relu(h[-1]), 128, 2, 'd_h%d' % len(h)), is_training, 'd_bn%d' % len(h)))        
-        h.append(self.bn(self.conv2d(l_relu(h[-1]), 256, 2, 'd_h%d' % len(h)), is_training, 'd_bn%d' % len(h)))
-        h.append(self.bn(self.conv2d(tf.pad(l_relu(h[-1]), [[0, 0], [1, 1], [1, 1], [0, 0]], mode='CONSTANT'), 
+        h.append(self.bn(self.conv2d(l_relu(h[-1]), 128, 2, 'd_h%d' % len(h)), 
+                         is_training, 'd_bn%d' % len(h)))        
+        h.append(self.bn(self.conv2d(l_relu(h[-1]), 256, 2, 'd_h%d' % len(h)), 
+                         is_training, 'd_bn%d' % len(h)))
+        h.append(self.bn(self.conv2d(tf.pad(l_relu(h[-1]), 
+                                            [[0, 0], [1, 1], [1, 1], [0, 0]], 
+                                            mode='CONSTANT'), 
                                      512, 1, 'd_h%d' % len(h), 'VALID'), 
                          is_training, 'd_bn%d' % len(h)))      
-        h.append(self.conv2d(tf.pad(l_relu(h[-1]), [[0, 0], [1, 1], [1, 1], [0, 0]], mode='CONSTANT'), 
+        h.append(self.conv2d(tf.pad(l_relu(h[-1]), 
+                                    [[0, 0], [1, 1], [1, 1], [0, 0]], 
+                                    mode='CONSTANT'), 
                              1, 1, 'd_h%d' % len(h), 'VALID')) # no BN
         h.append(tf.nn.sigmoid(h[-1]))
         return (h[-2], h[-1]) if not with_h else h
@@ -151,7 +166,7 @@ class Pix2pix:
                 self.lr = tf.placeholder(tf.float32, shape=None, name='learning_rate')
                 
         with tf.variable_scope('generator') as g_scope:
-            if self.gpu_num == 2:
+            if len(self.gpu_alloc) == 2:
                 with tf.device('/device:GPU:1'):
                     self.G_c = self.generator(self.c, self.batch_size, self.is_training, with_h=False)
                     g_scope.reuse_variables()
@@ -203,44 +218,55 @@ class Pix2pix:
                 G_var_list = [var for var in trainable_vars if 'g_' in var.name]
 
                 with tf.control_dependencies(update_ops):
-                    self.D_train_step = tf.train.AdamOptimizer(learning_rate=self.lr, beta1=self._beta1).minimize(0.5*D_loss, var_list=D_var_list)
-                    self.G_train_step = tf.train.AdamOptimizer(learning_rate=self.lr, beta1=self._beta1).minimize(G_loss, var_list=G_var_list)
+                    self.D_train_step = tf.train.AdamOptimizer(learning_rate=self.lr, 
+                                                               beta1=self._beta1).minimize(0.5*D_loss, var_list=D_var_list)
+                    self.G_train_step = tf.train.AdamOptimizer(learning_rate=self.lr, 
+                                                               beta1=self._beta1).minimize(G_loss, var_list=G_var_list)
             else:
                 raise NotImplementedError('Other optimizers have not been considered.')
                 
         with tf.name_scope('performance_measures'):
             with tf.name_scope('error'):
-                self.MAE = tf.reduce_mean(tf.abs(self._alpha*(self.G_c - self.x)), name='MAE') # Mean Absolute Error
-                self.MSE = tf.reduce_mean(tf.square(self._alpha*(self.G_c - self.x)), name='MSE') # Mean Squared Error
+                self.MAE = tf.reduce_mean(tf.abs(self._alpha*(self.G_c - self.x)), name='MAE') 
+                # Mean Absolute Error
+                self.MSE = tf.reduce_mean(tf.square(self._alpha*(self.G_c - self.x)), name='MSE') 
+                # Mean Squared Error
                 
             with tf.name_scope('accuracy'):
-                SSE = tf.reduce_sum(tf.square(self.G_c - self.x), axis=[1, 2, 3], name='SSE') # Sum of Squared Errors, [N, 1]
+                SSE = tf.reduce_sum(tf.square(self.G_c - self.x), axis=[1, 2, 3], name='SSE') 
+                # Sum of Squared Errors, [N, 1]
                 SST = tf.reduce_sum(tf.square(self.x - tf.reshape(tf.reduce_mean(self.x, axis=[1, 2, 3]), [-1, 1, 1, 1])), 
-                                    axis=[1, 2, 3], name='SST') # Total Sum of Squares, [N, 1]
+                                    axis=[1, 2, 3], name='SST') 
+                # Total Sum of Squares, [N, 1]
                 self.R2 = tf.reduce_mean(1.0 - SSE/SST, name='R2')
                 self.PSNR = tf.reduce_mean(tf.image.psnr(0.5*self.G_c + 0.5, 0.5*self.x + 0.5, max_val=1.0), name='PSNR') 
                 # returns [batch_size, 1] -> avg / -1~1 to 0~1
                 self.SSIM = tf.reduce_mean(tf.image.ssim(0.5*self.G_c + 0.5, 0.5*self.x + 0.5, max_val=1.0), name='SSIM') 
                 # returns [batch_size, 1] -> avg / -1~1 to 0~1
     
-        gamma_var = [var for var in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES) if 'gamma' in var.name]
+        gamma_var = [var for var in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES) \
+                     if 'gamma' in var.name]
         for gv in range(len(gamma_var)):
             tf.summary.histogram('gamma_var_%d' % gv, gamma_var[gv])
                 
-        beta_var = [var for var in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES) if 'beta' in var.name]
+        beta_var = [var for var in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES) \
+                    if 'beta' in var.name]
         for bv in range(len(beta_var)):
             tf.summary.histogram('beta_var_%d' % bv, beta_var[bv])
         
-        moving_var = [var for var in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES) if 'moving_' in var.name] 
+        moving_var = [var for var in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES) \
+                      if 'moving_' in var.name] 
         # To consider this, batch_size should be larger than 1 due to BN cancellation in a bottleneck.
         for mv in range(len(moving_var)):
             tf.summary.histogram('moving_var_%d' % mv, moving_var[mv])
             
-        weight_var = [var for var in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES) if 'weight' in var.name]
+        weight_var = [var for var in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES) \
+                      if 'weight' in var.name]
         for wv in range(len(weight_var)):
             tf.summary.histogram('weight_var_%d' % wv, weight_var[wv])
         
-        bias_var = [var for var in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES) if 'bias' in var.name]
+        bias_var = [var for var in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES) \
+                    if 'bias' in var.name]
         for biv in range(len(bias_var)):
             tf.summary.histogram('bias_var_%d' % biv, bias_var[biv])
             
@@ -264,8 +290,10 @@ class Pix2pix:
         merge = tf.summary.merge_all()
         writer = tf.summary.FileWriter(config.save_dir, self.sess.graph)
         
-        self.MAE_train_vals, self.MSE_train_vals, self.R2_train_vals, self.PSNR_train_vals, self.SSIM_train_vals = [], [], [], [], []
-        self.MAE_valid_vals, self.MSE_valid_vals, self.R2_valid_vals, self.PSNR_valid_vals, self.SSIM_valid_vals = [], [], [], [], []
+        self.MAE_train_vals, self.MSE_train_vals, self.R2_train_vals, \
+        self.PSNR_train_vals, self.SSIM_train_vals = [], [], [], [], []
+        self.MAE_valid_vals, self.MSE_valid_vals, self.R2_valid_vals, \
+        self.PSNR_valid_vals, self.SSIM_valid_vals = [], [], [], [], []
         
         if not config.lr_decay:
             lr_tmp = config.lr_init
@@ -276,24 +304,38 @@ class Pix2pix:
         iters_per_epoch = int(total_train_num/config.batch_size_training)
         
         for epoch in range(config.start_epoch, config.end_epoch):
-            batch_number = np.random.RandomState(seed=epoch).choice(total_train_num, (iters_per_epoch, config.batch_size_training), replace=False)
+            batch_number = np.random.RandomState(seed=epoch).choice(total_train_num, 
+                                                (iters_per_epoch, config.batch_size_training), 
+                                                replace=False)
             ############### 1 epoch ###############
             for i, batch in enumerate(batch_number):
-                c_batch = inputs_train[batch].reshape(config.batch_size_training, self.H, self.W, self.C_in)
-                x_batch = gts_train[batch].reshape(config.batch_size_training, self.H, self.W, self.C_out)        
-                
+                c_batch = inputs_train[batch].reshape(config.batch_size_training,
+                                      self.H, self.W, self.C_in)
+                x_batch = gts_train[batch].reshape(config.batch_size_training,
+                                   self.H, self.W, self.C_out)        
                 # update D
-                self.sess.run(self.D_train_step, feed_dict={self.c: c_batch, self.batch_size: config.batch_size_training, 
-                                                            self.x: x_batch, self.is_training: True, self.lr: lr_tmp})
+                self.sess.run(self.D_train_step, feed_dict={self.c: c_batch, 
+                                                            self.batch_size: config.batch_size_training, 
+                                                            self.x: x_batch, 
+                                                            self.is_training: True, 
+                                                            self.lr: lr_tmp})
                 # update G
-                self.sess.run(self.G_train_step, feed_dict={self.c: c_batch, self.batch_size: config.batch_size_training, 
-                                                            self.x: x_batch, self.is_training: True, self.lr: lr_tmp})
+                self.sess.run(self.G_train_step, feed_dict={self.c: c_batch, 
+                                                            self.batch_size: config.batch_size_training, 
+                                                            self.x: x_batch, 
+                                                            self.is_training: True, 
+                                                            self.lr: lr_tmp})
             #######################################
             
             if epoch % config.check_epoch == 0:
-                self.G_c_train, MAE_train_val, MSE_train_val, R2_train_val, PSNR_train_val, SSIM_train_val, summary_val = self.sess.run([self.G_c, self.MAE, self.MSE, self.R2, self.PSNR, self.SSIM, merge], 
-                                                                                                                                        feed_dict={self.c: inputs_train_, self.batch_size: len(inputs_train_), 
-                                                                                                                                                   self.x: gts_train_, self.is_training: True}) # is_training: True by pix2pix policy
+                self.G_c_train, MAE_train_val, MSE_train_val, R2_train_val, \
+                PSNR_train_val, SSIM_train_val, summary_val = \
+                self.sess.run([self.G_c, self.MAE, self.MSE, self.R2, self.PSNR, self.SSIM, merge], \
+                              feed_dict={self.c: inputs_train_, 
+                                         self.batch_size: len(inputs_train_), 
+                                         self.x: gts_train_, 
+                                         self.is_training: False}) 
+                # is_training can be True by pix2pix policy
                 self.MAE_train_vals.append(MAE_train_val)
                 self.MSE_train_vals.append(MSE_train_val)
                 self.R2_train_vals.append(R2_train_val)
@@ -301,16 +343,23 @@ class Pix2pix:
                 self.SSIM_train_vals.append(SSIM_train_val)
                 writer.add_summary(summary_val, epoch) 
                 
-                self.G_c_valid, MAE_valid_val, MSE_valid_val, R2_valid_val, PSNR_valid_val, SSIM_valid_val = self.sess.run([self.G_c, self.MAE, self.MSE, self.R2, self.PSNR, self.SSIM], 
-                                                                                                                           feed_dict={self.c: inputs_valid, self.batch_size: len(inputs_valid), 
-                                                                                                                                      self.x: gts_valid, self.is_training: True})
+                self.G_c_valid, MAE_valid_val, MSE_valid_val, R2_valid_val, \
+                PSNR_valid_val, SSIM_valid_val = \
+                self.sess.run([self.G_c, self.MAE, self.MSE, self.R2, self.PSNR, self.SSIM], \
+                              feed_dict={self.c: inputs_valid, 
+                                         self.batch_size: len(inputs_valid), 
+                                         self.x: gts_valid, 
+                                         self.is_training: True})
+    
                 self.MAE_valid_vals.append(MAE_valid_val)
                 self.MSE_valid_vals.append(MSE_valid_val)
                 self.R2_valid_vals.append(R2_valid_val)
                 self.PSNR_valid_vals.append(PSNR_valid_val)
                 self.SSIM_valid_vals.append(SSIM_valid_val)
                 
-                print('Epoch: %d, RMSE_train: %f, RMSE_valid: %f, R2_train: %f, R2_valid: %f' % (epoch, self.MSE_train_vals[-1]**0.5, self.MSE_valid_vals[-1]**0.5, self.R2_train_vals[-1], self.R2_valid_vals[-1]))
+                print('Epoch: %d, RMSE_train: %f, RMSE_valid: %f, R2_train: %f, R2_valid: %f' \
+                      % (epoch, self.MSE_train_vals[-1]**0.5, self.MSE_valid_vals[-1]**0.5, 
+                         self.R2_train_vals[-1], self.R2_valid_vals[-1]))
                     
     def evaluation(self, inputs, gts=None, is_training=True, with_h=False):
         """
@@ -323,18 +372,24 @@ class Pix2pix:
         """
         if gts is None:
             if not with_h:
-                return self.sess.run(self.G_c, feed_dict={self.c: inputs, self.batch_size: len(inputs), self.is_training: is_training})
+                return self.sess.run(self.G_c, feed_dict={self.c: inputs, 
+                                                          self.batch_size: len(inputs), 
+                                                          self.is_training: is_training})
             else:
-                return self.sess.run(self.G_c_with_h, feed_dict={self.c: inputs, self.batch_size: len(inputs), self.is_training: is_training})
+                return self.sess.run(self.G_c_with_h, feed_dict={self.c: inputs, 
+                                                                 self.batch_size: len(inputs), 
+                                                                 self.is_training: is_training})
             
         else: # gts is given
             if not with_h:
-                return self.sess.run([self.G_c, self.MAE, self.MSE, self.R2, self.PSNR, self.SSIM], feed_dict={self.c: inputs, 
-                                                                                                               self.batch_size: len(inputs),
-                                                                                                               self.x: gts,
-                                                                                                               self.is_training: is_training})
+                return self.sess.run([self.G_c, self.MAE, self.MSE, self.R2, self.PSNR, self.SSIM], 
+                                     feed_dict={self.c: inputs, 
+                                                self.batch_size: len(inputs),
+                                                self.x: gts,
+                                                self.is_training: is_training})
             else:
-                return self.sess.run([self.G_c_with_h, self.MAE, self.MSE, self.R2, self.PSNR, self.SSIM], feed_dict={self.c: inputs, 
-                                                                                                                      self.batch_size: len(inputs),
-                                                                                                                      self.x: gts,
-                                                                                                                      self.is_training: is_training})
+                return self.sess.run([self.G_c_with_h, self.MAE, self.MSE, self.R2, self.PSNR, self.SSIM], 
+                                     feed_dict={self.c: inputs, 
+                                                self.batch_size: len(inputs),
+                                                self.x: gts,
+                                                self.is_training: is_training})
