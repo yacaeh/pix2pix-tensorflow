@@ -23,7 +23,6 @@ flags.DEFINE_integer('seed', 1, 'seed number')
 flags.DEFINE_float('loss_lambda', 100.0, 'L1 loss lambda')
 flags.DEFINE_bool('LSGAN', False, 'applying LSGAN loss')
 flags.DEFINE_float('weight_decay_lambda', 0.0, 'L2 weight decay lambda')
-flags.DEFINE_bool('truncated', False, 'truncated weight distribution')
 flags.DEFINE_string('optimizer', 'Adam', 'optimizer')
 flags.DEFINE_list('gpu_alloc', [0, 1], 'specifying which GPU(s) to be used; [] if to use only cpu')
 # e.g. set it to [0, 1] if to use the first(0) and the second(1) gpus
@@ -81,7 +80,6 @@ def main(_):
                       loss_lambda=FLAGS.loss_lambda,
                       LSGAN=FLAGS.LSGAN,
                       weight_decay_lambda=FLAGS.weight_decay_lambda,
-                      truncated=FLAGS.truncated,
                       optimizer=FLAGS.optimizer,
                       gpu_alloc=FLAGS.gpu_alloc
                       )
