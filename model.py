@@ -335,7 +335,7 @@ class Pix2pix:
                                          self.batch_size: len(inputs_train_), 
                                          self.x: gts_train_, 
                                          self.is_training: False}) 
-                # is_training can be True by pix2pix policy
+                
                 self.MAE_train_vals.append(MAE_train_val)
                 self.MSE_train_vals.append(MSE_train_val)
                 self.R2_train_vals.append(R2_train_val)
@@ -361,14 +361,13 @@ class Pix2pix:
                       % (epoch, self.MSE_train_vals[-1]**0.5, self.MSE_valid_vals[-1]**0.5, 
                          self.R2_train_vals[-1], self.R2_valid_vals[-1]))
                     
-    def evaluation(self, inputs, gts=None, is_training=True, with_h=False):
+    def evaluation(self, inputs, gts=None, is_training=False, with_h=False):
         """
         Test set evaluation after the training and the validation
         
         Parameters
         inputs: conditions ([N, H, W, C_in]) (-1~1)       
         gts: (optional) ground truths ([N, H, W, C_out]) (-1~1)
-        is_training: default is True according to the pix2pix
         """
         if gts is None:
             if not with_h:
