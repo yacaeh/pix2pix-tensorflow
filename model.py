@@ -349,7 +349,7 @@ class Pix2pix:
                               feed_dict={self.c: inputs_valid, 
                                          self.batch_size: len(inputs_valid), 
                                          self.x: gts_valid, 
-                                         self.is_training: True})
+                                         self.is_training: False})
     
                 self.MAE_valid_vals.append(MAE_valid_val)
                 self.MSE_valid_vals.append(MSE_valid_val)
