@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 @author: shoh4486
-tf.__version__ == '1.12.0' ~ '1.14.0'
+tf.__version__ == '1.12.0' ~ '1.15.0'
 """
 import tensorflow as tf
 import numpy as np
@@ -9,6 +9,9 @@ import os
 import pprint
 from model import Pix2pix
 from utils import *
+import matplotlib.pyplot as plt
+from matplotlib.image import imread, imsave
+print(tf.__version__)
 
 flags = tf.app.flags
 # for model class instantiation
@@ -92,7 +95,7 @@ def main(_):
                       gpu_alloc=FLAGS.gpu_alloc
                       )
     
-    tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
+    pprint.pprint(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES))
     
     if FLAGS.train:
         from data.data_preprocessing import inputs_train, inputs_train_, \
@@ -165,15 +168,15 @@ def main(_):
                                                   )
                 G_c_test, MAE_test, MSE_test, R2_test, PSNR_test, SSIM_test = test_results
                 np.savetxt(os.path.join(FLAGS.save_dir, "test", "MAE_test.txt"), 
-                           MAE_test)
+                           MAE_test.reshape(1, 1))
                 np.savetxt(os.path.join(FLAGS.save_dir, "test", "MSE_test.txt"), 
-                           MSE_test)
+                           MSE_test.reshape(1, 1))
                 np.savetxt(os.path.join(FLAGS.save_dir, "test", "R2_test.txt"), 
-                           R2_test)
+                           R2_test.reshape(1, 1))
                 np.savetxt(os.path.join(FLAGS.save_dir, "test", "PSNR_test.txt"), 
-                           PSNR_test)
+                           PSNR_test.reshape(1, 1))
                 np.savetxt(os.path.join(FLAGS.save_dir, "test", "SSIM_test.txt"), 
-                           SSIM_test)
+                           SSIM_test.reshape(1, 1))
                 
             else:
                 G_c_test = pix2pix.evaluation(
@@ -188,6 +191,7 @@ def main(_):
                 for c in range(FLAGS.out_channel):
                     np.savetxt(os.path.join(FLAGS.save_dir, "test", "test_result%d_channel%d.txt" % (i, c)), 
                                G_c_test[i, :, :, c])
+                #imsave(os.path.join(FLAGS.save_dir, "test", "test_result%d.png" % i), G_c_test[i])
         else:
             raise NotImplementedError('pretrained session must be restored.')
             
