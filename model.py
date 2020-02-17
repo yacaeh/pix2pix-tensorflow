@@ -5,6 +5,7 @@ tf.__version__ == '1.12.0' ~ '1.14.0'
 """
 import tensorflow as tf
 import numpy as np
+import os
 from ops import *
 from utils import *
 
@@ -284,6 +285,9 @@ class Pix2pix:
         inputs_train, inputs_train_, inputs_valid = inputs
         gts_train, gts_train_, gts_valid = gts
         
+        if config.sess_saving_every_epoch:
+            saver = tf.train.Saver(max_to_keep=None)
+        
         if config.start_epoch == 0:
             self.sess.run(tf.global_variables_initializer())
             
@@ -360,6 +364,9 @@ class Pix2pix:
                 print('Epoch: %d, RMSE_train: %f, RMSE_valid: %f, R2_train: %f, R2_valid: %f' \
                       % (epoch, self.MSE_train_vals[-1]**0.5, self.MSE_valid_vals[-1]**0.5, 
                          self.R2_train_vals[-1], self.R2_valid_vals[-1]))
+                
+                if config.sess_saving_every_epoch:
+                    saver.save(self.sess, os.path.join(config.save_dir, "sess"), global_step=epoch)
                     
     def evaluation(self, inputs, gts=None, is_training=False, with_h=False):
         """
