@@ -28,7 +28,7 @@ Sehyeok Oh  @shoh4486
 - Inputs: FEM-simulated cross-sectional temperature profile, Outputs: Cross-sectional hardness distribution
 - Training tracking (No validation set, as the validation was carried out by cross-validation; epoch: 0~460)
   - **Training set (Process conditions: 'c', 'f', 'h' with their ground truth; from left-to-right, top-to-bottom)**
-    <img width='200' src=https://user-images.githubusercontent.com/39050306/78240851-8178d280-751a-11ea-9aa2-b619d7dfb1f2.gif>
+  <img width='200' src=https://user-images.githubusercontent.com/39050306/78240851-8178d280-751a-11ea-9aa2-b619d7dfb1f2.gif>
   <img width='200' src=https://user-images.githubusercontent.com/39050306/78243516-dae30080-751e-11ea-8d86-e352471e565c.png>
   <img width='200' src=https://user-images.githubusercontent.com/39050306/78240473-06172100-751a-11ea-96b3-bdd337893a39.gif>
   <img width='200' src=https://user-images.githubusercontent.com/39050306/78243609-06fe8180-751f-11ea-943f-345d5c2a6ba2.png>
