@@ -27,7 +27,7 @@ Sehyeok Oh  @shoh4486
 - Deep learning model for predicting hardness distribution in laser heat treatment of AISI H13 tool steel, *Applied Thermal Engineering* 153, 583-595 (2019).
 - Inputs: FEM-simulated cross-sectional temperature profile, Outputs: Cross-sectional hardness distribution
 - Training tracking (No validation set, as the validation was carried out by cross-validation; epoch: 0~460)
-![](output.gif)
+![](output2.gif)
   
 - **Result at the validated epoch (R2 accuracy: 94.4%)**
   <img width='700' src="https://user-images.githubusercontent.com/39050306/68071460-edb1a780-fdbd-11e9-9e79-f83ab867e11f.png">
